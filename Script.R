@@ -17,9 +17,10 @@ cat("\f")
 
 #------------------------------------------------------------------------------
 # Cargar paquetes
-pkg<-list("dplyr","here","pacman","skimr")
-lapply(pkg,require,character.only=T)
-rm(pkg)
+require(pacman)
+p_load(tidyverse,dplyr,here,skimr,tidyr)
+library(tidyverse)
+
 
 #------------------------------------------------------------------------------
 # Cargar las bases de datos
