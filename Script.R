@@ -48,13 +48,9 @@ colnames(personas)
   # id presente en ambas tablas
 
 
-
-
-
-
 #------------------------------------------------------------------------------
 # Unir las bases
-df <-personas %>%  left_join(hogares)
+base_completa <-personas %>%  left_join(hogares)
   #Unión de ambas bases.
 
 
