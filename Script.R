@@ -18,7 +18,7 @@ cat("\f")
 #------------------------------------------------------------------------------
 # Cargar paquetes
 require(pacman)
-p_load(tidyverse,dplyr,here,skimr,tidyr)
+p_load(tidyverse,dplyr,here,skimr,tidyr,gamlr,modelsummary,caret,rio)
 library(tidyverse)
 
 
@@ -54,23 +54,81 @@ base_completa <-personas %>%  left_join(hogares)
   #Unión de ambas bases.
 
 
+rm(hogares,personas)
+  #Borramos las bases que no utilizamos
+
 #------------------------------------------------------------------------------
 
-# Generando muestra train, evaluate and test
+# Borramos las variables que no están en ambas bases de datos (base_completa vs train)
 
-## 75% of the sample size
-smp_train_size <- floor(0.7 * nrow(df)) ## cambiar el 0.75 por tamaño de muestra train
 
-## set the seed to make your partition reproducible
-set.seed(10101)
+hogares <- readRDS("~/Programacion/BDML/Predicting-Poverty/Stores/data/test_hogares.Rds")
+personas <- readRDS("~/Programacion/BDML/Predicting-Poverty/Stores/data/test_personas.Rds")
+  #Cargamos las bases train
 
-train_ind <- sample(seq_len(nrow(df)), size = smp_size)
+base_test <-personas %>%  left_join(hogares)
+  #Pegamos las bases train
 
-train <- df[train_ind, ]
-test <- df[-train_ind, ]
+rm(hogares,personas)
+  #Borramos las bases individuales
 
-smp_eva_size <- floor(0.2 * nrow(df)) ## cambiar el 0.75 por tamaño de muestra eval
-smp_test_size <- floor(0.1 * nrow(df)) ## cambiar el 0.75 por tamaño de muestra train
+columnas_test<-c(names(base_test))
+  #Sacar las columnas presentes en el df: test
+
+remover <- c("Pobre")
+
+columnas<-append(columnas_test,"Pobre")
+
+  
+
+
+
+base_completa<-base_completa[,columnas]
+  #Depuramos la base para que tenga las mismas columnas que test.
+  #Si no se tienen las mismas features falla el modelo.
+
+#------------------------------------------------------------------------------
+
+# Generando muestra train y evaluate 
+
+prop.table(table(base_completa$Pobre))
+#74% personas no pobres y 25% de personas pobres.
+
+set.seed(666)
+
+split1 <- createDataPartition(base_completa$Pobre , p = 0.7)[[1]]
+
+training = base_completa[split1,]
+#Base de entrenamiento con 70% de los datos
+
+evaluating = base_completa[-split1,]
+#Base de evaluación de hiperparametros
+
+#No hace falta hacer la partición para la muestra test dado que el ejercicio ya la da.
+
+rm(base_completa)
+rm(columnas,columnas_test,remover,split1)
+  #Para mantener el espacio de trabajo limpio
+
+#------------------------------------------------------------------------------
+
+#Checkear particiones
+
+prop.table(table(training$Pobre))
+prop.table(table(evaluating$Pobre))
+  #Todo parece estar en orden.
+
+
+#------------------------------------------------------------------------------
+
+# Implementación de modelos
+
+
+
+  
+
+
+
 
 
 
