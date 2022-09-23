@@ -43,7 +43,14 @@ personas <- readRDS("data/train_personas.Rds")
 #personas <- readRDS("C:/Users/caaya/OneDrive - Universidad de los Andes/universidad/8 semestre/BigData/Problem sets/Problem set 2/Predicting-Poverty/data/train_personas.Rds")
 
 #Federico
+setwd("C:\\Users\\LENOVO\\Desktop\\VIII Semestre\\Machine Learning\\Git Hub BDML\\Problem-set-2\\Predicting-Poverty")
+hogares <- readRDS("C:\\Users\\LENOVO\\Desktop\\VIII Semestre\\Machine Learning\\Git Hub BDML\\Problem-set-2\\Predicting-Poverty\\data\\train_hogares.Rds")
+personas <- readRDS("C:\\Users\\LENOVO\\Desktop\\VIII Semestre\\Machine Learning\\Git Hub BDML\\Problem-set-2\\Predicting-Poverty\\data\\train_personas.Rds")
 
+#Federico en computador prestado de la U
+#setwd("C:\Users\LENOVO\Desktop\VIII Semestre\Machine Learning\Git Hub BDML\Problem-set-2\Predicting-Poverty")
+#hogares <- readRDS("C:\Users\LENOVO\Desktop\VIII Semestre\Machine Learning\Git Hub BDML\Problem-set-2\Predicting-Poverty\data\train_hogares.Rds")
+#personas <- readRDS("C:\Users\LENOVO\Desktop\VIII Semestre\Machine Learning\Git Hub BDML\Problem-set-2\Predicting-Poverty\data\train_personas.Rds")
 
 #------------------------------------------------------------------------------
 #  Analísis exploratorio de ambas bases por separado.
@@ -75,9 +82,19 @@ rm(hogares,personas)
 # Borramos las variables que no están en ambas bases de datos (base_completa vs train)
 
 
+<<<<<<< Updated upstream
 hogares <- readRDS("data/test_hogares.Rds")
 personas <- readRDS("data/test_personas.Rds")
+=======
+# Mateo
+#hogares <- readRDS("~/Programacion/BDML/Predicting-Poverty/Stores/data/test_hogares.Rds")
+#personas <- readRDS("~/Programacion/BDML/Predicting-Poverty/Stores/data/test_personas.Rds")
+>>>>>>> Stashed changes
   #Cargamos las bases train
+
+#Federico
+hogares <- readRDS("C:\\Users\\LENOVO\\Desktop\\VIII Semestre\\Machine Learning\\Git Hub BDML\\Problem-set-2\\Predicting-Poverty\\data\\test_hogares.Rds")
+personas <- readRDS("C:\\Users\\LENOVO\\Desktop\\VIII Semestre\\Machine Learning\\Git Hub BDML\\Problem-set-2\\Predicting-Poverty\\data\\test_personas.Rds")
 
 test <-personas %>%  left_join(hogares) 
   #Pegamos las bases train
@@ -218,6 +235,8 @@ skim(training)
 #------------------------------------------------------------------------------
 
 # Implementación de modelos
+
+#Elastic net Federico
 
 
 # Random Forest (Mateo)
