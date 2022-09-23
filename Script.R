@@ -37,20 +37,7 @@ getwd()
 hogares <- readRDS("data/train_hogares.Rds")
 personas <- readRDS("data/train_personas.Rds")
 
-#Carlos
-#setwd("C:/Users/caaya/OneDrive - Universidad de los Andes/universidad/8 semestre/BigData/Problem sets/Problem set 2/Predicting-Poverty")
-#hogares <- readRDS("C:/Users/caaya/OneDrive - Universidad de los Andes/universidad/8 semestre/BigData/Problem sets/Problem set 2/Predicting-Poverty/data/train_hogares.Rds")
-#personas <- readRDS("C:/Users/caaya/OneDrive - Universidad de los Andes/universidad/8 semestre/BigData/Problem sets/Problem set 2/Predicting-Poverty/data/train_personas.Rds")
 
-#Federico
-setwd("C:\\Users\\LENOVO\\Desktop\\VIII Semestre\\Machine Learning\\Git Hub BDML\\Problem-set-2\\Predicting-Poverty")
-hogares <- readRDS("C:\\Users\\LENOVO\\Desktop\\VIII Semestre\\Machine Learning\\Git Hub BDML\\Problem-set-2\\Predicting-Poverty\\data\\train_hogares.Rds")
-personas <- readRDS("C:\\Users\\LENOVO\\Desktop\\VIII Semestre\\Machine Learning\\Git Hub BDML\\Problem-set-2\\Predicting-Poverty\\data\\train_personas.Rds")
-
-#Federico en computador prestado de la U
-#setwd("C:\Users\LENOVO\Desktop\VIII Semestre\Machine Learning\Git Hub BDML\Problem-set-2\Predicting-Poverty")
-#hogares <- readRDS("C:\Users\LENOVO\Desktop\VIII Semestre\Machine Learning\Git Hub BDML\Problem-set-2\Predicting-Poverty\data\train_hogares.Rds")
-#personas <- readRDS("C:\Users\LENOVO\Desktop\VIII Semestre\Machine Learning\Git Hub BDML\Problem-set-2\Predicting-Poverty\data\train_personas.Rds")
 
 #------------------------------------------------------------------------------
 #  Analísis exploratorio de ambas bases por separado.
@@ -77,24 +64,22 @@ base_completa<-subset(base_completa,select=c(-Dominio,-Orden))
 rm(hogares,personas)
   #Borramos las bases que no utilizamos
 
+objeto<-skim(base_completa)
+indices_chiquitos<-which(objeto$complete_rate>0.5)
+base_completa<-base_completa[,indices_chiquitos]
+  #Acá hago el skim para saber %NAN, elimino las variables con %NAN>0.5
+  
+
 #------------------------------------------------------------------------------
 
 # Borramos las variables que no están en ambas bases de datos (base_completa vs train)
 
 
-<<<<<<< Updated upstream
 hogares <- readRDS("data/test_hogares.Rds")
 personas <- readRDS("data/test_personas.Rds")
-=======
-# Mateo
-#hogares <- readRDS("~/Programacion/BDML/Predicting-Poverty/Stores/data/test_hogares.Rds")
-#personas <- readRDS("~/Programacion/BDML/Predicting-Poverty/Stores/data/test_personas.Rds")
->>>>>>> Stashed changes
-  #Cargamos las bases train
 
-#Federico
-hogares <- readRDS("C:\\Users\\LENOVO\\Desktop\\VIII Semestre\\Machine Learning\\Git Hub BDML\\Problem-set-2\\Predicting-Poverty\\data\\test_hogares.Rds")
-personas <- readRDS("C:\\Users\\LENOVO\\Desktop\\VIII Semestre\\Machine Learning\\Git Hub BDML\\Problem-set-2\\Predicting-Poverty\\data\\test_personas.Rds")
+
+  #Cargamos las bases test
 
 test <-personas %>%  left_join(hogares) 
   #Pegamos las bases train
@@ -107,16 +92,32 @@ rm(hogares,personas)
   #Borramos las bases individuales
 
 columnas_test<-c(names(test))
-  #Sacar las columnas presentes en el df: test
+columnas_base<-c(names(base_completa))
 
-remover <- c("Pobre")
+  #Sacar las columnas presentes en en los DF
 
-columnas<-append(columnas_test,"Pobre")
+
+  columnas_total<-intersect(columnas_base,columnas_test)
+  #Intersección entre variables comunes
+  columnas_total
+  
+  remover <- c("Pobre")
+  columnas<-append(columnas_total,"Pobre")
+  #Agregamos pobre a la base total
+  
+  test<-test[,columnas_total]
+  #Para que test tenga las mismas variables
+  
+  rm(objeto,columnas_base,columnas_total,v,variables_categoricas,indices_chiquitos,
+     filtro)
+  
 
 #------------------------------------------------------------------------------
 # factores para base completa
 
 base_completa<-base_completa[,columnas]
+
+
   #Depuramos la base para que tenga las mismas columnas que test.
   #Si no se tienen las mismas features falla el modelo.
 
@@ -222,11 +223,13 @@ prop.table(table(evaluating$Pobre))
       # Depto: departamento. Util.
 
 
-skim(training)
-  # Sugiero descartar las variables que tienen una tasa de completado <0.6 
+
+
+
+  # Sugiero descartar las variables que tienen una tasa de completado <0.5 
   # porque considero que pueden hacer mucho más ruido del que aportan dado que 
   # me gustaria imputar los NAN a ver que tal. 
-
+#------------------------------------------------------------------------------
 
 
 
@@ -239,6 +242,7 @@ skim(training)
 #Elastic net Federico
 
 
+#------------------------------------------------------------------------------
 
 # Random Forest (Mateo)
 
@@ -254,4 +258,9 @@ evaluating$Pobre<-factor(evaluating$Pobre)
 modelo1_fit <- fit(modelo1, Pobre ~ . -id, data = training)
 
 modelo1_fit
+
+
+#------------------------------------------------------------------------------
+
+
 
