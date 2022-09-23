@@ -18,17 +18,24 @@ cat("\f")
 #------------------------------------------------------------------------------
 # Cargar paquetes
 require(pacman)
-p_load(tidyverse,dplyr,here,skimr,tidyr,gamlr,modelsummary,caret,rio)
+p_load(tidyverse,dplyr,here,skimr,tidyr,gamlr,modelsummary,caret,
+       rio,knitr, kableExtra, rstudioapi,tidymodels,janitor,MLmetrics,
+       rattle,doParallel)
 library(tidyverse)
 
 
 #------------------------------------------------------------------------------
 # Cargar las bases de datos
 
-#Mateo
-setwd("~/Programacion/BDML/Predicting-Poverty")
-hogares <- readRDS("~/Programacion/BDML/Predicting-Poverty/Stores/data/train_hogares.Rds")
-personas <- readRDS("~/Programacion/BDML/Predicting-Poverty/Stores/data/train_personas.Rds")
+
+path_code <- dirname(getActiveDocumentContext()$path)
+setwd(path_code)
+getwd()
+  #Con este set de comandos se pone el directorio solo de cada persone
+
+
+hogares <- readRDS("data/train_hogares.Rds")
+personas <- readRDS("data/train_personas.Rds")
 
 #Carlos
 #setwd("C:/Users/caaya/OneDrive - Universidad de los Andes/universidad/8 semestre/BigData/Problem sets/Problem set 2/Predicting-Poverty")
@@ -55,7 +62,7 @@ base_completa <-personas %>%  left_join(hogares)
 
 colnames(base_completa)
 
-base_completa<-subset(base_completa,select=-Dominio)
+base_completa<-subset(base_completa,select=c(-Dominio,-Orden))
   #Dropeamos dominio que es lo mismo que Depto
 
 (base_completa)
@@ -68,14 +75,14 @@ rm(hogares,personas)
 # Borramos las variables que no están en ambas bases de datos (base_completa vs train)
 
 
-hogares <- readRDS("~/Programacion/BDML/Predicting-Poverty/Stores/data/test_hogares.Rds")
-personas <- readRDS("~/Programacion/BDML/Predicting-Poverty/Stores/data/test_personas.Rds")
+hogares <- readRDS("data/test_hogares.Rds")
+personas <- readRDS("data/test_personas.Rds")
   #Cargamos las bases train
 
 test <-personas %>%  left_join(hogares) 
   #Pegamos las bases train
 
-test<-subset(test,select=-Dominio)
+test<-subset(test,select=c(-Dominio,-Orden))
   #Dominio no sirve porque es igual a depto
 
 
@@ -203,7 +210,8 @@ skim(training)
   # porque considero que pueden hacer mucho más ruido del que aportan dado que 
   # me gustaria imputar los NAN a ver que tal. 
 
-  # Tambien podemos probar modelos sin imputación a ver que tal.
+
+
 
 
 
@@ -214,9 +222,16 @@ skim(training)
 
 # Random Forest (Mateo)
 
+  # Modelo basico de clasificación sin imputación
+  
+modelo1 <- decision_tree(mode="classification") 
+  #Establecimiento del modelo
+
+training$Pobre<-factor(training$Pobre)
+evaluating$Pobre<-factor(evaluating$Pobre)
 
 
+modelo1_fit <- fit(modelo1, Pobre ~ . -id, data = training)
 
-
-
+modelo1_fit
 
