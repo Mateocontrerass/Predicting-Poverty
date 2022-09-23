@@ -31,9 +31,9 @@ hogares <- readRDS("~/Programacion/BDML/Predicting-Poverty/Stores/data/train_hog
 personas <- readRDS("~/Programacion/BDML/Predicting-Poverty/Stores/data/train_personas.Rds")
 
 #Carlos
-setwd("C:/Users/caaya/OneDrive - Universidad de los Andes/universidad/8 semestre/BigData/Problem sets/Problem set 2/Predicting-Poverty")
-hogares <- readRDS("C:/Users/caaya/OneDrive - Universidad de los Andes/universidad/8 semestre/BigData/Problem sets/Problem set 2/Predicting-Poverty/data/train_hogares.Rds")
-personas <- readRDS("C:/Users/caaya/OneDrive - Universidad de los Andes/universidad/8 semestre/BigData/Problem sets/Problem set 2/Predicting-Poverty/data/train_personas.Rds")
+#setwd("C:/Users/caaya/OneDrive - Universidad de los Andes/universidad/8 semestre/BigData/Problem sets/Problem set 2/Predicting-Poverty")
+#hogares <- readRDS("C:/Users/caaya/OneDrive - Universidad de los Andes/universidad/8 semestre/BigData/Problem sets/Problem set 2/Predicting-Poverty/data/train_hogares.Rds")
+#personas <- readRDS("C:/Users/caaya/OneDrive - Universidad de los Andes/universidad/8 semestre/BigData/Problem sets/Problem set 2/Predicting-Poverty/data/train_personas.Rds")
 
 #Federico
 
@@ -41,7 +41,7 @@ personas <- readRDS("C:/Users/caaya/OneDrive - Universidad de los Andes/universi
 #------------------------------------------------------------------------------
 #  Analísis exploratorio de ambas bases por separado.
 colnames(hogares)
-skim(hogares)
+  #skim(hogares)
 
 
 colnames(personas)
@@ -53,6 +53,12 @@ colnames(personas)
 base_completa <-personas %>%  left_join(hogares)
   #Unión de ambas bases.
 
+colnames(base_completa)
+
+base_completa<-subset(base_completa,select=-Dominio)
+  #Dropeamos dominio que es lo mismo que Depto
+
+(base_completa)
 
 rm(hogares,personas)
   #Borramos las bases que no utilizamos
@@ -66,8 +72,12 @@ hogares <- readRDS("~/Programacion/BDML/Predicting-Poverty/Stores/data/test_hoga
 personas <- readRDS("~/Programacion/BDML/Predicting-Poverty/Stores/data/test_personas.Rds")
   #Cargamos las bases train
 
-base_test <-personas %>%  left_join(hogares)
+test <-personas %>%  left_join(hogares) 
   #Pegamos las bases train
+
+test<-subset(test,select=-Dominio)
+  #Dominio no sirve porque es igual a depto
+
 
 rm(hogares,personas)
   #Borramos las bases individuales
@@ -79,15 +89,65 @@ remover <- c("Pobre")
 
 columnas<-append(columnas_test,"Pobre")
 
-  
-
-
+#------------------------------------------------------------------------------
+# factores para base completa
 
 base_completa<-base_completa[,columnas]
   #Depuramos la base para que tenga las mismas columnas que test.
   #Si no se tienen las mismas features falla el modelo.
 
+variables_categoricas <- c("Depto")
+
+for (v in variables_categoricas){ base_completa[, v] <- as.factor(base_completa[, v, drop = T])}
+
+
+filtro<-base_completa$Clase==1
+base_completa$Clase[filtro]<-0
+
+filtro<-base_completa$Clase==2
+base_completa$Clase[filtro]<-1
+
+unique(base_completa$Clase)
+
+#Volver 1 y 0 la variable Clase.
+
+is.factor(base_completa$Depto)
+
+#Variables efectivamente categoricas
+
+base_completa$Clase<-factor(base_completa$Clase)
+is.factor(base_completa$Clase)
+#Factor tambien la variable clase.
+
+
+
 #------------------------------------------------------------------------------
+#Factor para variables de df test
+variables_categoricas <- c("Depto")
+
+for (v in variables_categoricas){ test[, v] <- as.factor(test[, v, drop = T])}
+
+
+filtro<-test$Clase==1
+test$Clase[filtro]<-0
+
+filtro<-test$Clase==2
+test$Clase[filtro]<-1
+
+unique(test$Clase)
+
+#Volver 1 y 0 la variable Clase.
+
+is.factor(test$Depto)
+
+#Variables efectivamente categoricas
+
+test$Clase<-factor(test$Clase)
+is.factor(test$Clase)
+#Factor tambien la variable clase.
+
+#------------------------------------------------------------------------------
+
 
 # Generando muestra train y evaluate 
 
@@ -110,6 +170,8 @@ rm(base_completa)
 rm(columnas,columnas_test,remover,split1)
   #Para mantener el espacio de trabajo limpio
 
+
+
 #------------------------------------------------------------------------------
 
 #Checkear particiones
@@ -118,14 +180,33 @@ prop.table(table(training$Pobre))
 prop.table(table(evaluating$Pobre))
   #Todo parece estar en orden.
 
+#------------------------------------------------------------------------------
+
+# Analisis descriptivo
+
+# Objetivo: Tratar NAN y convertir valores a factor si es necesario.
+
+  #skim(training)
+
+  #Observaciones preliminares:
+   
+    # Variables str:
+
+      # ID: No util. No introducir a los modelos. 
+      # Clase: 1 Urbano 2 Rural. Considero que es util.
+      # Dominio: indicador de cabecera municipal. Depende del modelo podria ser util.
+      # Depto: departamento. Util.
+
+
+skim(training$Pobre)
+
 
 #------------------------------------------------------------------------------
 
 # Implementación de modelos
 
 
-
-  
+# Random Forest (Mateo)
 
 
 
