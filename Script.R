@@ -96,20 +96,20 @@ base_completa<-base_completa[,columnas]
   #Depuramos la base para que tenga las mismas columnas que test.
   #Si no se tienen las mismas features falla el modelo.
 
-variables_categoricas <- c("Depto")
+  variables_categoricas <- c("Depto")
+  
+  for (v in variables_categoricas){ base_completa[, v] <- as.factor(base_completa[, v, drop = T])}
+  
+  
+  filtro<-base_completa$Clase==1
+  base_completa$Clase[filtro]<-0
+  
+  filtro<-base_completa$Clase==2
+  base_completa$Clase[filtro]<-1
+  
+  unique(base_completa$Clase)
 
-for (v in variables_categoricas){ base_completa[, v] <- as.factor(base_completa[, v, drop = T])}
-
-
-filtro<-base_completa$Clase==1
-base_completa$Clase[filtro]<-0
-
-filtro<-base_completa$Clase==2
-base_completa$Clase[filtro]<-1
-
-unique(base_completa$Clase)
-
-#Volver 1 y 0 la variable Clase.
+  #Volver 1 y 0 la variable Clase.
 
 is.factor(base_completa$Depto)
 
@@ -198,7 +198,13 @@ prop.table(table(evaluating$Pobre))
       # Depto: departamento. Util.
 
 
-skim(training$Pobre)
+skim(training)
+  # Sugiero descartar las variables que tienen una tasa de completado <0.6 
+  # porque considero que pueden hacer mucho más ruido del que aportan dado que 
+  # me gustaria imputar los NAN a ver que tal. 
+
+  # Tambien podemos probar modelos sin imputación a ver que tal.
+
 
 
 #------------------------------------------------------------------------------
@@ -207,6 +213,7 @@ skim(training$Pobre)
 
 
 # Random Forest (Mateo)
+
 
 
 
