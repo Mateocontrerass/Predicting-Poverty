@@ -82,7 +82,7 @@ test<-subset(test,select=-Dominio)
 rm(hogares,personas)
   #Borramos las bases individuales
 
-columnas_test<-c(names(base_test))
+columnas_test<-c(names(test))
   #Sacar las columnas presentes en el df: test
 
 remover <- c("Pobre")
