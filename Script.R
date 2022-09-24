@@ -20,7 +20,7 @@ cat("\f")
 require(pacman)
 p_load(tidyverse,dplyr,here,skimr,tidyr,gamlr,modelsummary,caret,
        rio,knitr, kableExtra, rstudioapi,tidymodels,janitor,MLmetrics,
-       rattle,doParallel)
+       rattle,doParallel, install = TRUE)
 library(tidyverse)
 
 
@@ -37,20 +37,7 @@ getwd()
 hogares <- readRDS("data/train_hogares.Rds")
 personas <- readRDS("data/train_personas.Rds")
 
-#Carlos
-#setwd("C:/Users/caaya/OneDrive - Universidad de los Andes/universidad/8 semestre/BigData/Problem sets/Problem set 2/Predicting-Poverty")
-#hogares <- readRDS("C:/Users/caaya/OneDrive - Universidad de los Andes/universidad/8 semestre/BigData/Problem sets/Problem set 2/Predicting-Poverty/data/train_hogares.Rds")
-#personas <- readRDS("C:/Users/caaya/OneDrive - Universidad de los Andes/universidad/8 semestre/BigData/Problem sets/Problem set 2/Predicting-Poverty/data/train_personas.Rds")
 
-#Federico
-setwd("C:\\Users\\LENOVO\\Desktop\\VIII Semestre\\Machine Learning\\Git Hub BDML\\Problem-set-2\\Predicting-Poverty")
-hogares <- readRDS("C:\\Users\\LENOVO\\Desktop\\VIII Semestre\\Machine Learning\\Git Hub BDML\\Problem-set-2\\Predicting-Poverty\\data\\train_hogares.Rds")
-personas <- readRDS("C:\\Users\\LENOVO\\Desktop\\VIII Semestre\\Machine Learning\\Git Hub BDML\\Problem-set-2\\Predicting-Poverty\\data\\train_personas.Rds")
-
-#Federico en computador prestado de la U
-#setwd("C:\Users\LENOVO\Desktop\VIII Semestre\Machine Learning\Git Hub BDML\Problem-set-2\Predicting-Poverty")
-#hogares <- readRDS("C:\Users\LENOVO\Desktop\VIII Semestre\Machine Learning\Git Hub BDML\Problem-set-2\Predicting-Poverty\data\train_hogares.Rds")
-#personas <- readRDS("C:\Users\LENOVO\Desktop\VIII Semestre\Machine Learning\Git Hub BDML\Problem-set-2\Predicting-Poverty\data\train_personas.Rds")
 
 #------------------------------------------------------------------------------
 #  AnalÃ­sis exploratorio de ambas bases por separado.
@@ -82,19 +69,9 @@ rm(hogares,personas)
 # Borramos las variables que no estÃ¡n en ambas bases de datos (base_completa vs train)
 
 
-<<<<<<< Updated upstream
+
 hogares <- readRDS("data/test_hogares.Rds")
 personas <- readRDS("data/test_personas.Rds")
-=======
-# Mateo
-#hogares <- readRDS("~/Programacion/BDML/Predicting-Poverty/Stores/data/test_hogares.Rds")
-#personas <- readRDS("~/Programacion/BDML/Predicting-Poverty/Stores/data/test_personas.Rds")
->>>>>>> Stashed changes
-  #Cargamos las bases train
-
-#Federico
-hogares <- readRDS("C:\\Users\\LENOVO\\Desktop\\VIII Semestre\\Machine Learning\\Git Hub BDML\\Problem-set-2\\Predicting-Poverty\\data\\test_hogares.Rds")
-personas <- readRDS("C:\\Users\\LENOVO\\Desktop\\VIII Semestre\\Machine Learning\\Git Hub BDML\\Problem-set-2\\Predicting-Poverty\\data\\test_personas.Rds")
 
 test <-personas %>%  left_join(hogares) 
   #Pegamos las bases train
@@ -237,6 +214,76 @@ skim(training)
 # ImplementaciÃ³n de modelos
 
 #Elastic net Federico
+#install.packages("glmnet")
+library(glmnet)
+## Lasso
+x<- select(training, c(-Pobre, -id))
+y <- training$Pobre
+
+modelo_lasso <- glmnet(
+  x,
+  y,
+  alpha = 1,
+  nlambda = 300,
+  standardize = FALSE
+)
+
+# Analicemos cómo cambian los coeficientes para diferentes lambdas
+regularizacion <- modelo_lasso$beta %>% 
+  as.matrix() %>%
+  t() %>% 
+  as_tibble() %>%
+  mutate(lambda = modelo_lasso$lambda)
+
+regularizacion <- regularizacion %>%
+  pivot_longer(
+    cols = !lambda, 
+    names_to = "predictor",
+    values_to = "coeficientes"
+  )
+
+regularizacion %>%
+  ggplot(aes(x = lambda, y = coeficientes, color = predictor)) +
+  geom_line() +
+  scale_x_log10(
+    breaks = scales::trans_breaks("log10", function(x) 10^x),
+    labels = scales::trans_format("log10",
+                                  scales::math_format(10^.x))
+  ) +
+  labs(title = "Coeficientes del modelo en función de la regularización (Lasso)", x = "Lambda", y = "Coeficientes") +
+  theme_bw() +
+  theme(legend.position="bottom")
+
+newx<-data.matrix(select(evaluating,c(-id, -Pobre)))
+predicciones_lasso <- predict(modelo_lasso, 
+                              newx )
+lambdas_lasso <- modelo_lasso$lambda
+
+# Cada predicción se va a evaluar
+y_test = evaluating$Pobre
+resultados_lasso <- data.frame()
+for (i in 1:length(lambdas_lasso)) {
+  l <- lambdas_lasso[i]
+  y_hat_out2 <- predicciones_lasso[, i]
+  r22 <- R2_Score(y_pred = y_hat_out2, y_true = y_test)
+  rmse2 <- RMSE(y_pred = y_hat_out2, y_true = y_test)
+  resultado <- data.frame(Modelo = "Lasso",
+                          Muestra = "Fuera",
+                          Lambda = l,
+                          R2_Score = r22, 
+                          RMSE = rmse2)
+  resultados_lasso <- bind_rows(resultados_lasso, resultado)
+}
+
+ggplot(resultados_lasso, aes(x = Lambda, y = RMSE)) +
+  geom_point() +
+  geom_line() +
+  theme_bw() +
+  scale_y_continuous(labels = scales::comma)
+
+
+
+#Ridge
 
 
 
