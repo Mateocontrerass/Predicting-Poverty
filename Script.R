@@ -170,11 +170,11 @@ columnas_base<-c(names(base_completa))
   
   skim(base_completa)
   
-  filtro<-base_completa$Clase==1
-  base_completa$Clase[filtro]<-0
+  #filtro<-base_completa$Clase==1
+  #base_completa$Clase[filtro]<-0
   
-  filtro<-base_completa$Clase==2
-  base_completa$Clase[filtro]<-1
+  #filtro<-base_completa$Clase==2
+  #base_completa$Clase[filtro]<-1
   
   unique(base_completa$Clase)
 
@@ -245,7 +245,20 @@ rm(filtro,hola,v,variables_categoricas)
   # Sugiero descartar las variables que tienen una tasa de completado <0.5 
   # porque considero que pueden hacer mucho más ruido del que aportan dado que 
   # me gustaria imputar los NAN a ver que tal. 
-#------------------------------------------------------------------------------
+
+
+  # Datos imputados
+
+  library("mice")
+
+  hola<-training[c(-11)]
+  rm(hola) 
+               
+  training_imputed<- mice(data=training[c(-11)], nnet.MaxNWts = 5000)
+  
+  #Imputación con mice menos a oficio
+
+  #------------------------------------------------------------------------------
 
   # NOTAS IMPORTANTES
 
@@ -347,14 +360,68 @@ training$Pobre<-factor(training$Pobre)
 evaluating$Pobre<-factor(evaluating$Pobre)
 
 
-modelo1_fit <- fit(modelo1, Pobre ~ . -id, data = training)
+modelo1_fit <- fit(modelo1, Pobre ~ . -id -Li -Lp, data = training)
 
 modelo1_fit
 
 training$Pobre
 testing$pobre
 
+
+  # Desempeño
+
+y_hat_insample <- predict(modelo1_fit, training)$.pred_class
+y_hat_outsample <- predict(modelo1_fit, evaluating)$.pred_class
+
+
+training$Pobre
+
+acc_in <- Accuracy(y_true = training$Pobre, y_pred = y_hat_insample)
+acc_in <- round(100*acc_in, 2)
+pre_in <- Precision(y_true = training$Pobre, y_pred = y_hat_insample)
+pre_in <- round(100*pre_in, 2)
+recall_in <- Recall(y_true = training$Pobre, y_pred = y_hat_insample)
+recall_in <- round(100*recall_in, 2)
+
+f1_in <- F1_Score(y_true = training$Pobre, y_pred = y_hat_insample)
+
+f1_in <- round(100*f1_in, 2)
+
+
+evaluating$Pobre
+
+acc_out <- Accuracy(y_true = evaluating$Pobre, y_pred = y_hat_outsample)
+acc_out <- round(100*acc_out, 2)
+pre_out <- Precision(y_true = evaluating$Pobre, y_pred = y_hat_outsample)
+pre_out <- round(100*pre_out, 2)
+recall_out <- Recall(y_true = evaluating$Pobre, y_pred = y_hat_outsample)
+recall_out <- round(100*recall_out, 2)
+
+f1_out <- F1_Score(y_true = evaluating$Pobre, y_pred = y_hat_outsample)
+
+f1_out <- round(100*f1_out, 2)
+
+resultados <- data.frame(Modelo = "Modelo 1", Base = c("Train", "Test"), 
+                         Accuracy = c(acc_in, acc_out), 
+                         Precision = c(pre_in, pre_out),
+                         Recall = c(recall_in, recall_out),
+                         F1 = c(f1_in, f1_out))
+
+kbl(resultados) %>%
+  kable_styling(full_width = T)
+
+#------------------------------------------------------------------------------
+
   # Random Forest para clasificación
+install.packages("randomForest")
+library("randomForest")
+data=subset(mydata, select=c( -var1, -var2 ) )
+
+
+forest<-train(Pobre~. , data=subset(training,select=c(-id,-Li,-Lp)),method="rf",
+              trControl=ctrl,
+              family="binomial",metric="Sens")
+
 
 
 #------------------------------------------------------------------------------
