@@ -56,18 +56,20 @@ base_completa <-personas %>%  left_join(hogares)
 
 colnames(base_completa)
 
-base_completa<-subset(base_completa,select=c(-Dominio,-Orden))
+base_completa<-subset(base_completa,select=c(-Dominio,-Orden,-Fex_c,-Fex_dpto,-Npobres,-Nindigentes))
   #Dropeamos dominio que es lo mismo que Depto
 
-(base_completa)
 
 rm(hogares,personas)
   #Borramos las bases que no utilizamos
 
 objeto<-skim(base_completa)
+  #Guardamos el skim para sacar el complete_rate
 indices_chiquitos<-which(objeto$complete_rate>0.5)
+  #Indices de complete rate>0.5
 base_completa<-base_completa[,indices_chiquitos]
-  #Ac谩 hago el skim para saber %NAN, elimino las variables con %NAN>0.5
+  #Implementamos estas variables
+
   
 
 #------------------------------------------------------------------------------
@@ -84,7 +86,7 @@ personas <- readRDS("data/test_personas.Rds")
 test <-personas %>%  left_join(hogares) 
   #Pegamos las bases train
 
-test<-subset(test,select=c(-Dominio,-Orden))
+test<-subset(test,select=c(-Dominio,-Orden,-Fex_c,-Fex_dpto,-Npobres,-Nindigentes))
   #Dominio no sirve porque es igual a depto
 
 
@@ -107,24 +109,66 @@ columnas_base<-c(names(base_completa))
   
   test<-test[,columnas_total]
   #Para que test tenga las mismas variables
+
+  base_completa<-base_completa[,columnas]
+  #Depuramos la base para que tenga las mismas columnas que test.
+  #Si no se tienen las mismas features falla el modelo.
   
   rm(objeto,columnas_base,columnas_total,v,variables_categoricas,indices_chiquitos,
      filtro)
   
 
 #------------------------------------------------------------------------------
-# factores para base completa
-
-base_completa<-base_completa[,columnas]
-
-
-  #Depuramos la base para que tenga las mismas columnas que test.
-  #Si no se tienen las mismas features falla el modelo.
-
-  variables_categoricas <- c("Depto")
+  #Factor para variables de df test
   
-  for (v in variables_categoricas){ base_completa[, v] <- as.factor(base_completa[, v, drop = T])}
   
+  #p6020: sexo
+  #p6040:a帽os cumplidos
+  #p6050: parentesco con el jefe del hogar: factor
+  #p6090: afiliado o cotizante a SS
+  #p6100: regimen afiliado: subs coti ecopetrol : factor
+  #p6210 : rango nivel educativo m谩s alto : factor
+  # ":s1 : grado escolar aprobado : discrita numerica
+  #p6240: actividad que ocup贸 tiempo : factor
+  # oficio : factor
+  #p7500s2: recibi贸 pago por pensiones? : factor
+  # "s3: m谩s pagos: factor.
+  # p7505: recibi贸 dinero de algun lado? :factor : si/no
+  # p7510s1: recibi贸 dinero otrade residentes : factor
+  # " s2: dinero de fuera del pais: factor
+  # " s3: dinero de instituciones: factor
+  # " s5: dinero de activos con banco: factor
+  # " s6: dinero cesantias: factor
+  # " s7: otros : factor
+  # Pet : edad trabajar : factor
+  # Oc: Ocupado : factor
+  #Fex_c : factor de expansi贸n: no se que es #######
+  #fex_dpto: factor expan... tampoco se
+  #p5000: numero de cuartos: numerico
+  #p5010: en cuantos cuartos duermen las personas: numerico
+  #p5090: vivienda arriendo o propia: factor
+  #p5130: cuanto pagar铆a de arriendo: numerico
+  #nper: personass en hogar: numerico
+  #npersug: #per unidad gasto: numerico
+  #Li: linea indigencia: no utilizar
+  #linea pobreza:LP : no utilizar
+  
+  
+
+  
+  variables_categoricas <- c("Depto","P6020","P6050","P6090","P6100",
+                             "P6210","P6210s1","P6240","Oficio",
+                             "P7500s2","P7500s3","P7505","P7510s1",
+                             "P7510s2","P7510s3","P7510s5","P7510s6",
+                             "P7510s7",
+                             "Pet","Oc","P5090","Clase","Pobre")
+  
+
+  c(names(base_completa))
+    
+  base_completa[,variables_categoricas]<-lapply(base_completa[,variables_categoricas],factor)
+  
+  skim(base_completa)
   
   filtro<-base_completa$Clase==1
   base_completa$Clase[filtro]<-0
@@ -136,40 +180,10 @@ base_completa<-base_completa[,columnas]
 
   #Volver 1 y 0 la variable Clase.
 
-is.factor(base_completa$Depto)
-
-#Variables efectivamente categoricas
-
-base_completa$Clase<-factor(base_completa$Clase)
-is.factor(base_completa$Clase)
-#Factor tambien la variable clase.
+  base_completa$Clase<-as.factor(base_completa$Clase)
 
 
 
-#------------------------------------------------------------------------------
-#Factor para variables de df test
-variables_categoricas <- c("Depto")
-
-for (v in variables_categoricas){ test[, v] <- as.factor(test[, v, drop = T])}
-
-
-filtro<-test$Clase==1
-test$Clase[filtro]<-0
-
-filtro<-test$Clase==2
-test$Clase[filtro]<-1
-
-unique(test$Clase)
-
-#Volver 1 y 0 la variable Clase.
-
-is.factor(test$Depto)
-
-#Variables efectivamente categoricas
-
-test$Clase<-factor(test$Clase)
-is.factor(test$Clase)
-#Factor tambien la variable clase.
 
 #------------------------------------------------------------------------------
 
@@ -205,6 +219,8 @@ prop.table(table(training$Pobre))
 prop.table(table(evaluating$Pobre))
   #Todo parece estar en orden.
 
+rm(filtro,hola,v,variables_categoricas)
+
 #------------------------------------------------------------------------------
 
 # Analisis descriptivo
@@ -231,8 +247,14 @@ prop.table(table(evaluating$Pobre))
   # me gustaria imputar los NAN a ver que tal. 
 #------------------------------------------------------------------------------
 
+  # NOTAS IMPORTANTES
 
+  # No utilizar las siguientes variables para la estimaci贸n: 
+  # ID / Li / Lp 
 
+skim(training)
+
+unique(training$Clase)
 
 
 #------------------------------------------------------------------------------
@@ -254,7 +276,7 @@ modelo_lasso <- glmnet(
   standardize = FALSE
 )
 
-# Analicemos c髆o cambian los coeficientes para diferentes lambdas
+# Analicemos c?mo cambian los coeficientes para diferentes lambdas
 regularizacion <- modelo_lasso$beta %>% 
   as.matrix() %>%
   t() %>% 
@@ -276,7 +298,7 @@ regularizacion %>%
     labels = scales::trans_format("log10",
                                   scales::math_format(10^.x))
   ) +
-  labs(title = "Coeficientes del modelo en funci髇 de la regularizaci髇 (Lasso)", x = "Lambda", y = "Coeficientes") +
+  labs(title = "Coeficientes del modelo en funci?n de la regularizaci?n (Lasso)", x = "Lambda", y = "Coeficientes") +
   theme_bw() +
   theme(legend.position="bottom")
 
@@ -285,7 +307,7 @@ predicciones_lasso <- predict(modelo_lasso,
                               newx )
 lambdas_lasso <- modelo_lasso$lambda
 
-# Cada predicci髇 se va a evaluar
+# Cada predicci?n se va a evaluar
 y_test = evaluating$Pobre
 resultados_lasso <- data.frame()
 for (i in 1:length(lambdas_lasso)) {
@@ -328,6 +350,11 @@ evaluating$Pobre<-factor(evaluating$Pobre)
 modelo1_fit <- fit(modelo1, Pobre ~ . -id, data = training)
 
 modelo1_fit
+
+training$Pobre
+testing$pobre
+
+  # Random Forest para clasificaci贸n
 
 
 #------------------------------------------------------------------------------
