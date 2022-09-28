@@ -270,11 +270,11 @@ rm(filtro,hola,v,variables_categoricas)
   save(data_imputada,file="data/dat_imp.Rda")
   #Salvo el archivo para no tener que correr el modelo cada vez
   
-  data_imputada<-load("data/data_imp.Rda")
+  data_imputada<-load("data/dat_imp.Rda")
   data_rf_train<-cbind(identificadores,data_imputada)
   #Pego los identificadores
   
-
+###################################################Utilizar esta data imputada
   
 #------------------------------------------------------------------------------
 
@@ -438,7 +438,7 @@ forest<-train(Pobre~. , data=subset(data_rf_train,select=c(-id,-Li,-Lp)),method=
               trControl=ctrl,
               family="binomial",metric="Sens")
 
-
+#################Correr todo este bloque
 
 #------------------------------------------------------------------------------
 
