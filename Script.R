@@ -44,7 +44,6 @@ personas <- readRDS("data/train_personas.Rds")
 colnames(hogares)
   #skim(hogares)
 
-
 colnames(personas)
   # id presente en ambas tablas
 
@@ -54,7 +53,6 @@ colnames(personas)
 base_completa <-personas %>%  left_join(hogares)
   #Unión de ambas bases.
 
-colnames(base_completa)
 
 base_completa<-subset(base_completa,select=c(-Dominio,-Orden,-Fex_c,-Fex_dpto,-Npobres,-Nindigentes,
                                              -P7510s1,
@@ -69,12 +67,29 @@ rm(hogares,personas)
 
 objeto<-skim(base_completa)
   #Guardamos el skim para sacar el complete_rate
-indices_chiquitos<-which(objeto$complete_rate>0.5)
+  
+
+
+ing<-base_completa$Ingtot
+  #por algun motivo, a pesar de tener un buen complete rate, al eliminar los
+  #complete rate<0.5 se va el ingreso, por lo que se guarda y se adiciona 
+  #posteriormente.
+
+
+
+indices_chiquitos<-which(objeto$complete_rate>.5)
+
+
+
   #Indices de complete rate>0.5
-base_completa<-base_completa[,indices_chiquitos]
+base_completa<-base_completa[,c(indices_chiquitos)]
+
+base_completa<-cbind(base_completa,ing)
+
   #Implementamos estas variables
 
-  
+prueba<-base_completa[objeto$complete_rate>0.5]
+
 
 #------------------------------------------------------------------------------
 
@@ -90,7 +105,7 @@ personas <- readRDS("data/test_personas.Rds")
 test <-personas %>%  left_join(hogares) 
   #Pegamos las bases train
 
-test<-subset(test,select=c(-Dominio,-Orden,-Fex_c,-Fex_dpto,-Npobres,-Nindigentes,))
+test<-subset(test,select=c(-Dominio,-Orden,-Fex_c,-Fex_dpto,-Npobres,-Nindigentes))
   #Dominio no sirve porque es igual a depto
 
 
@@ -98,6 +113,7 @@ rm(hogares,personas)
   #Borramos las bases individuales
 
 columnas_test<-c(names(test))
+
 columnas_base<-c(names(base_completa))
 
   #Sacar las columnas presentes en en los DF
@@ -105,10 +121,12 @@ columnas_base<-c(names(base_completa))
 
   columnas_total<-intersect(columnas_base,columnas_test)
   #Intersección entre variables comunes
+  
   columnas_total
   
-  remover <- c("Pobre")
-  columnas<-append(columnas_total,"Pobre")
+  remover <- c("Pobre","ing")
+  
+  columnas<-append(columnas_total,remover)
   #Agregamos pobre a la base total
   
   test<-test[,columnas_total]
@@ -273,9 +291,12 @@ rm(filtro,hola,v,variables_categoricas)
   #Pego los identificadores
   
   
-  save(data_rf_train,file="data/dat_imp.Rda")
+  save(data_rf_train,file="data/data_imputada.Rda")
+  save(data_rf_train,file="data/data_imputada.csv")
   
-  data_imputada<-load("data/dat_imp.Rda")
+  data_imputada <- load("data/data_imputada.Rda")
+  #Por algún motivo, el objeto se guarda como : "data_rf_train"
+  
   
   #Salvo el archivo para no tener que correr el modelo cada vez
   
@@ -494,11 +515,28 @@ resultados
 install.packages("randomForest")
 library("randomForest")
 
-ctrl<-trainControl(method="oob",number=5,verbose=TRUE,,savePredictions=T)
+#Demasiado pesado, voy a partir la base otra vez
 
-forest<-train(Pobre~. , data=subset(data_rf_train,select=c(-id,-Li,-Lp)),method="rf",
+split1 <- createDataPartition(data_rf_train$Pobre , p = 0.2)[[1]]
+
+training2<- data_rf_train[split1,]
+
+
+
+ctrl<-trainControl(method="cv",number=5,verbose=TRUE,savePredictions=T,
+                   summaryFunction = twoClassSummary )
+
+
+forest<-train(Pobre~. , data=subset(training2,select=c(-id,-Li,-Lp)),method="rf",
               trControl=ctrl,
-              family="binomial",metric="Sens")
+              family="binomial",
+              metric="Sens")
+
+
+
+
+
+
 
 #################Correr todo este bloque
 
