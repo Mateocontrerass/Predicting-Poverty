@@ -267,12 +267,17 @@ rm(filtro,hola,v,variables_categoricas)
   skim(data_imputada)
   #Verifico los NAN
   
-  save(data_imputada,file="data/dat_imp.Rda")
-  #Salvo el archivo para no tener que correr el modelo cada vez
+
   
-  data_imputada<-load("data/dat_imp.Rda")
   data_rf_train<-cbind(identificadores,data_imputada)
   #Pego los identificadores
+  
+  
+  save(data_rf_train,file="data/dat_imp.Rda")
+  
+  data_imputada<-load("data/dat_imp.Rda")
+  
+  #Salvo el archivo para no tener que correr el modelo cada vez
   
 ###################################################Utilizar esta data imputada
   
@@ -426,9 +431,66 @@ resultados <- data.frame(Modelo = "Modelo 1", Base = c("Train", "Test"),
 kbl(resultados) %>%
   kable_styling(full_width = T)
 
+
+  # Modelo basico de clasificación con imputación
+  
+
+modelo1_fit <- fit(modelo1, Pobre ~ . -id -Li -Lp, data = data_rf_train)
+
+modelo1_fit
+
+
+# Desempeño
+
+y_hat_insample <- predict(modelo1_fit, data_rf_train)$.pred_class
+y_hat_outsample <- predict(modelo1_fit, evaluating)$.pred_class
+
+
+training$Pobre
+
+acc_in <- Accuracy(y_true = data_rf_train$Pobre, y_pred = y_hat_insample)
+acc_in <- round(100*acc_in, 2)
+pre_in <- Precision(y_true = data_rf_train$Pobre, y_pred = y_hat_insample)
+pre_in <- round(100*pre_in, 2)
+recall_in <- Recall(y_true = training$Pobre, y_pred = y_hat_insample)
+recall_in <- round(100*recall_in, 2)
+
+f1_in <- F1_Score(y_true = data_rf_train$Pobre, y_pred = y_hat_insample)
+
+f1_in <- round(100*f1_in, 2)
+
+
+evaluating$Pobre
+
+acc_out <- Accuracy(y_true = evaluating$Pobre, y_pred = y_hat_outsample)
+acc_out <- round(100*acc_out, 2)
+pre_out <- Precision(y_true = evaluating$Pobre, y_pred = y_hat_outsample)
+pre_out <- round(100*pre_out, 2)
+recall_out <- Recall(y_true = evaluating$Pobre, y_pred = y_hat_outsample)
+recall_out <- round(100*recall_out, 2)
+
+f1_out <- F1_Score(y_true = evaluating$Pobre, y_pred = y_hat_outsample)
+
+f1_out <- round(100*f1_out, 2)
+
+resultados2 <- data.frame(Modelo = "Modelo 1 imp", Base = c("Train", "Test"), 
+                         Accuracy = c(acc_in, acc_out), 
+                         Precision = c(pre_in, pre_out),
+                         Recall = c(recall_in, recall_out),
+                         F1 = c(f1_in, f1_out))
+
+kbl(resultados) %>%
+  kable_styling(full_width = T)
+
+resultados <- rbind(resultados, resultados2)
+resultados
+
+#Peor resultado out of sample para imputados :(
+
 #------------------------------------------------------------------------------
 
   # Random Forest para clasificación
+
 install.packages("randomForest")
 library("randomForest")
 
@@ -442,5 +504,9 @@ forest<-train(Pobre~. , data=subset(data_rf_train,select=c(-id,-Li,-Lp)),method=
 
 #------------------------------------------------------------------------------
 
+  # Random Forest para predicción de ingreso
 
+forest<-train(Ingtot~. , data=subset(data_rf_train,select=c(-id,-Li,-Lp)),method="rf",
+              trControl=ctrl,
+              family="binomial",metric="Sens")
 
