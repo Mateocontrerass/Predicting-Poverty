@@ -526,12 +526,13 @@ ctrl<-trainControl(method="cv",number=5,verbose=TRUE,savePredictions=T,
                    summaryFunction = twoClassSummary )
 
 
-forest<-train(Pobre~. , data=subset(training2,select=c(-id,-Li,-Lp)),method="rf",
+forest<-train(Pobre~. , data=subset(training2,select=c(-id,-Li,-Lp,-ing)),method="rf",
               trControl=ctrl,
               family="binomial",
               metric="Sens")
 
-
+#De esta mini muestra quiero sacar los errores y ponerlos en un DF para
+#la base grande y despues decidir cual usamos
 
 
 
@@ -543,7 +544,11 @@ forest<-train(Pobre~. , data=subset(training2,select=c(-id,-Li,-Lp)),method="rf"
 
   # Random Forest para predicción de ingreso
 
-forest<-train(Ingtot~. , data=subset(data_rf_train,select=c(-id,-Li,-Lp)),method="rf",
+forest<-train(Ingtot~. , data=subset(data_rf_train,select=c(-id,-Li,-Lp-Pobre)),method="rf",
               trControl=ctrl,
               family="binomial",metric="Sens")
+
+
+
+
 
