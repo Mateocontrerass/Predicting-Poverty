@@ -56,7 +56,11 @@ base_completa <-personas %>%  left_join(hogares)
 
 colnames(base_completa)
 
-base_completa<-subset(base_completa,select=c(-Dominio,-Orden,-Fex_c,-Fex_dpto,-Npobres,-Nindigentes))
+base_completa<-subset(base_completa,select=c(-Dominio,-Orden,-Fex_c,-Fex_dpto,-Npobres,-Nindigentes,
+                                             -P7510s1,
+                                             -P7510s2,-P7510s3,-P7510s5,-P7510s6,
+                                             -P7510s7,-P7500s2,-P7500s3,-Oficio,-Des,-Pet,-Oc,-Ina))
+
   #Dropeamos dominio que es lo mismo que Depto
 
 
@@ -86,7 +90,7 @@ personas <- readRDS("data/test_personas.Rds")
 test <-personas %>%  left_join(hogares) 
   #Pegamos las bases train
 
-test<-subset(test,select=c(-Dominio,-Orden,-Fex_c,-Fex_dpto,-Npobres,-Nindigentes))
+test<-subset(test,select=c(-Dominio,-Orden,-Fex_c,-Fex_dpto,-Npobres,-Nindigentes,))
   #Dominio no sirve porque es igual a depto
 
 
@@ -157,11 +161,8 @@ columnas_base<-c(names(base_completa))
 
   
   variables_categoricas <- c("Depto","P6020","P6050","P6090","P6100",
-                             "P6210","P6210s1","P6240","Oficio",
-                             "P7500s2","P7500s3","P7505","P7510s1",
-                             "P7510s2","P7510s3","P7510s5","P7510s6",
-                             "P7510s7",
-                             "Pet","Oc","P5090","Clase","Pobre")
+                             "P6210","P6210s1","P6240","P7505",
+                             "P5090","Clase","Pobre")
   
 
   c(names(base_completa))
@@ -247,27 +248,42 @@ rm(filtro,hola,v,variables_categoricas)
   # me gustaria imputar los NAN a ver que tal. 
 
 
-  # Datos imputados
+#------------------------------------------------------------------------------
+  #Imputación de datos
 
-  library("mice")
+  #install.packages("mixgb")               
+  library("mixgb")
 
-  hola<-training[c(-11)]
-  rm(hola) 
-               
-  training_imputed<- mice(data=training[c(-11)], nnet.MaxNWts = 5000)
+  identificadores<-subset(training,select=c("id","Li","Lp"))
+  train_set<-subset(training,select=c(-id,-Li,-Lp))
+  #Esto para guardar estas variables que no pueden entrar en el mixgb
   
-  #Imputación con mice menos a oficio
+  imputed_test<-mixgb(data=train_set,verbose=TRUE)
+  #Imputación de los datos
+  
+  
+  data_imputada<-imputed_test[[1]]
+  #Saco el primer dataframe
+  skim(data_imputada)
+  #Verifico los NAN
+  
+  save(data_imputada,file="data/dat_imp.Rda")
+  #Salvo el archivo para no tener que correr el modelo cada vez
+  
+  data_imputada<-load("data/data_imp.Rda")
+  data_rf_train<-cbind(identificadores,data_imputada)
+  #Pego los identificadores
+  
 
-  #------------------------------------------------------------------------------
+  
+#------------------------------------------------------------------------------
 
   # NOTAS IMPORTANTES
 
   # No utilizar las siguientes variables para la estimación: 
   # ID / Li / Lp 
 
-skim(training)
 
-unique(training$Clase)
 
 
 #------------------------------------------------------------------------------
@@ -415,10 +431,10 @@ kbl(resultados) %>%
   # Random Forest para clasificación
 install.packages("randomForest")
 library("randomForest")
-data=subset(mydata, select=c( -var1, -var2 ) )
 
+ctrl<-trainControl(method="oob",number=5,verbose=TRUE,,savePredictions=T)
 
-forest<-train(Pobre~. , data=subset(training,select=c(-id,-Li,-Lp)),method="rf",
+forest<-train(Pobre~. , data=subset(data_rf_train,select=c(-id,-Li,-Lp)),method="rf",
               trControl=ctrl,
               family="binomial",metric="Sens")
 
