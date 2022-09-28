@@ -276,7 +276,7 @@ prop.table(table(evaluating$Pobre))
   train_set<-subset(training,select=c(-id,-Li,-Lp))
   #Esto para guardar estas variables que no pueden entrar en el mixgb
   
-  imputed_test<-mixgb(data=train_set,verbose=TRUE)
+  imputed_test<-mixgb(data=train_set,verbose=TRUE,m=1)
   #Imputación de los datos
   
   
