@@ -291,9 +291,8 @@ prop.table(table(evaluating$Pobre))
   #Pego los identificadores
   
   
-  save(data_rf_train,file="data/data_imputada.Rda")
-  save(data_rf_train,file="data/data_imputada.csv")
-  
+  save(data_rf_train,file="data/data_imputada2.Rds")
+
   data_imputada <- load("data/data_imputada.Rda")
   #Por algún motivo, el objeto se guarda como : "data_rf_train"
   
