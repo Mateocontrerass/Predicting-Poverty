@@ -136,9 +136,7 @@ columnas_base<-c(names(base_completa))
   #Depuramos la base para que tenga las mismas columnas que test.
   #Si no se tienen las mismas features falla el modelo.
   
-  rm(objeto,columnas_base,columnas_total,indices_chiquitos,
-     columnas,columnas_test,ing,remover)
-  
+
 
 #------------------------------------------------------------------------------
   #Factor para variables de df test
@@ -187,6 +185,14 @@ columnas_base<-c(names(base_completa))
     
   base_completa[,variables_categoricas]<-lapply(base_completa[,variables_categoricas],factor)
   
+  variables_categoricas <- c("Depto","P6020","P6050","P6090","P6100",
+                             "P6210","P6210s1","P6240","P7505",
+                             "P5090","Clase")
+  
+  test[,variables_categoricas]<-lapply(test[,variables_categoricas],factor)
+  
+  save(test,file="data/test")
+  
   skim(base_completa)
   
   #filtro<-base_completa$Clase==1
@@ -228,6 +234,7 @@ rm(base_completa)
 rm(columnas,columnas_test,remover,split1,variables_categoricas)
   #Para mantener el espacio de trabajo limpio
 
+save(evaluating,file="data/evaluating")
 
 
 #------------------------------------------------------------------------------
@@ -291,16 +298,24 @@ prop.table(table(evaluating$Pobre))
   #Pego los identificadores
   
   
-  save(data_rf_train,file="data/data_imputada2.Rds")
+  save(data_rf_train,file="data/data_imputada2")
 
-  data_imputada <- load("data/data_imputada.Rda")
+  
+#------------------------------------------------------------------------------
+  
+  #Base train imputada  
+  load("data/data_imputada2")
+  #Base test
+  load("data\\test")
+  #Base evaluación
+  load("data/evaluating")
+  
+
   #Por algún motivo, el objeto se guarda como : "data_rf_train"
   
   
-  #Salvo el archivo para no tener que correr el modelo cada vez
-  
-###################################################Utilizar esta data imputada
-  
+
+
 #------------------------------------------------------------------------------
 
   # NOTAS IMPORTANTES
@@ -514,39 +529,48 @@ resultados
 install.packages("randomForest")
 library("randomForest")
 
+#Base de datos para clasificación:
+
+train_clas<-subset(data_rf_train,select=c(-id,-Li,-Lp,-ing))
+
+
 #Demasiado pesado, voy a partir la base otra vez
 
-split1 <- createDataPartition(data_rf_train$Pobre , p = 0.2)[[1]]
+split1 <- createDataPartition(train_clas$Pobre , p = 0.1)[[1]]
 
-training2<- data_rf_train[split1,]
+train_pequeña<- train_clas[split1,]
 
 
 
-ctrl<-trainControl(method="cv",number=5,verbose=TRUE,savePredictions=T,
+ctrl<-trainControl(method="cv",number=2,verbose=TRUE,savePredictions=T,
                    summaryFunction = twoClassSummary )
 
 
-forest<-train(Pobre~. , data=subset(training2,select=c(-id,-Li,-Lp,-ing)),method="rf",
+forest<-train(Pobre~. , data=train_pequeña,method="rf",
               trControl=ctrl,
               family="binomial",
               metric="Sens")
 
-#De esta mini muestra quiero sacar los errores y ponerlos en un DF para
-#la base grande y despues decidir cual usamos
 
 
-
-
-
-#################Correr todo este bloque
 
 #------------------------------------------------------------------------------
 
   # Random Forest para predicción de ingreso
 
-forest<-train(Ingtot~. , data=subset(data_rf_train,select=c(-id,-Li,-Lp-Pobre)),method="rf",
+
+#Base para predicción
+
+train_pred<-subset(data_rf_train,select=c(-id,-Li,-Lp,-Pobre))
+
+split1 <- createDataPartition(train_pred$Pobre , p = 0.1)[[1]]
+
+train_pequeña_pred<- train_clas[split1,]
+
+forest<-train(ing~. , data=train_pequeña_pred,method="rf",
               trControl=ctrl,
               family="binomial",metric="Sens")
+
 
 
 
