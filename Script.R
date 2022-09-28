@@ -24,6 +24,8 @@ p_load(tidyverse,dplyr,here,skimr,tidyr,gamlr,modelsummary,caret,
 library(tidyverse)
 
 
+
+
 #------------------------------------------------------------------------------
 # Cargar las bases de datos
 
@@ -85,10 +87,8 @@ indices_chiquitos<-which(objeto$complete_rate>.5)
 base_completa<-base_completa[,c(indices_chiquitos)]
 
 base_completa<-cbind(base_completa,ing)
+  #reoincorporamos la variable de ingreso
 
-  #Implementamos estas variables
-
-prueba<-base_completa[objeto$complete_rate>0.5]
 
 
 #------------------------------------------------------------------------------
@@ -105,7 +105,7 @@ personas <- readRDS("data/test_personas.Rds")
 test <-personas %>%  left_join(hogares) 
   #Pegamos las bases train
 
-test<-subset(test,select=c(-Dominio,-Orden,-Fex_c,-Fex_dpto,-Npobres,-Nindigentes))
+test<-subset(test,select=c(-Dominio,-Orden,-Fex_c,-Fex_dpto))
   #Dominio no sirve porque es igual a depto
 
 
@@ -136,8 +136,8 @@ columnas_base<-c(names(base_completa))
   #Depuramos la base para que tenga las mismas columnas que test.
   #Si no se tienen las mismas features falla el modelo.
   
-  rm(objeto,columnas_base,columnas_total,v,variables_categoricas,indices_chiquitos,
-     filtro)
+  rm(objeto,columnas_base,columnas_total,indices_chiquitos,
+     columnas,columnas_test,ing,remover)
   
 
 #------------------------------------------------------------------------------
@@ -225,7 +225,7 @@ evaluating = base_completa[-split1,]
 #No hace falta hacer la partición para la muestra test dado que el ejercicio ya la da.
 
 rm(base_completa)
-rm(columnas,columnas_test,remover,split1)
+rm(columnas,columnas_test,remover,split1,variables_categoricas)
   #Para mantener el espacio de trabajo limpio
 
 
@@ -238,7 +238,6 @@ prop.table(table(training$Pobre))
 prop.table(table(evaluating$Pobre))
   #Todo parece estar en orden.
 
-rm(filtro,hola,v,variables_categoricas)
 
 #------------------------------------------------------------------------------
 
@@ -273,6 +272,7 @@ rm(filtro,hola,v,variables_categoricas)
   library("mixgb")
 
   identificadores<-subset(training,select=c("id","Li","Lp"))
+  
   train_set<-subset(training,select=c(-id,-Li,-Lp))
   #Esto para guardar estas variables que no pueden entrar en el mixgb
   
