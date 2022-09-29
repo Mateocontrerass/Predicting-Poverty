@@ -441,8 +441,8 @@ prop.table(table(evaluating$Pobre))
 #install.packages("glmnet")
 library(glmnet)
 ## Lasso
-x<- select(training, c(-Pobre, -id))
-y <- training$Pobre
+x<- subset(training, select = c(-Li,-Lp,-id,-Pobre_1, -ing))
+y <- training$ing
 
 modelo_lasso <- glmnet(
   x,
@@ -478,13 +478,13 @@ regularizacion %>%
   theme_bw() +
   theme(legend.position="bottom")
 
-newx<-data.matrix(select(evaluating,c(-id, -Pobre)))
+newx<-data.matrix(subset(evaluating, select = c(-Li,-Lp,-id,-Pobre_1, -ing)))
 predicciones_lasso <- predict(modelo_lasso, 
                               newx )
 lambdas_lasso <- modelo_lasso$lambda
 
 # Cada predicci?n se va a evaluar
-y_test = evaluating$Pobre
+y_test = evaluating$ing
 resultados_lasso <- data.frame()
 for (i in 1:length(lambdas_lasso)) {
   l <- lambdas_lasso[i]
@@ -499,14 +499,53 @@ for (i in 1:length(lambdas_lasso)) {
   resultados_lasso <- bind_rows(resultados_lasso, resultado)
 }
 
+#Revisamos los posibles MSE
+
 ggplot(resultados_lasso, aes(x = Lambda, y = RMSE)) +
   geom_point() +
   geom_line() +
   theme_bw() +
   scale_y_continuous(labels = scales::comma)
 
+#Revisamos los posibles R2
+ggplot(resultados_lasso, aes(x = Lambda, y = R2_Score)) +
+  geom_point() +
+  geom_line() +
+  theme_bw() +
+  scale_y_continuous(labels = scales::comma)
 
+filtro <- resultados_lasso$RMSE == min(resultados_lasso$RMSE)
+mejor_lambda_lasso <- resultados_lasso[filtro, "Lambda"]
 
+# Guardamos el mejor Lasso
+#predicción con la base de datos training
+newxt<-data.matrix(subset(evaluating, select = c(-Li,-Lp,-id,-Pobre_1, -ing)))
+y_hat_in2 <- predict.glmnet(modelo_lasso,
+                            newx,
+                            s = mejor_lambda_lasso)
+
+#predicción con la base de datos test
+y_hat_out2 <- predict.glmnet(modelo_lasso,
+                             newxt,
+                             s = mejor_lambda_lasso)
+
+# Métricas dentro y fuera de muestra. Paquete MLmetrics
+r2_in2 <- R2_Score(y_pred = exp(y_hat_in2), y_true = exp(training$ing))
+rmse_in2 <- RMSE(y_pred = exp(y_hat_in2), y_true = exp(training$ing))
+
+r2_out2 <- R2_Score(y_pred = exp(y_hat_out2), y_true = exp(evaluating$ing))
+rmse_out2 <- RMSE(y_pred = exp(y_hat_out2), y_true = exp(evaluating$ing))
+
+# Guardamos el desempeño
+resultados2 <- data.frame(Modelo = "Lasso", 
+                          Muestra = "Dentro",
+                          R2_Score = r2_in2, RMSE = rmse_in2) %>%
+  rbind(data.frame(Modelo = "Lasso", 
+                   Muestra = "Fuera",
+                   R2_Score = r2_out2, RMSE = rmse_out2))
+
+# Juntamos resultados con regresión lineal
+resultados <- rbind(resultados, resultados2)
 #Ridge
 
 
