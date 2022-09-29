@@ -22,6 +22,7 @@ p_load(tidyverse,dplyr,here,skimr,tidyr,gamlr,modelsummary,caret,
        rio,knitr, kableExtra, rstudioapi,tidymodels,janitor,MLmetrics,
        rattle,doParallel, install = TRUE)
 library(tidyverse)
+install.packages("mixgb")
 library("mixgb")
 
 set.seed(666)
@@ -1023,16 +1024,8 @@ rf_clas<-train(Pobre_1~.,data=subset(training,select=c(-id,-Li,-Lp,-ing)),method
 
 #Base para predicción
 
-train_pred<-subset(data_rf_train,select=c(-id,-Li,-Lp,-Pobre))
-
-split1 <- createDataPartition(train_pred$Pobre , p = 0.1)[[1]]
-
-train_pequeña_pred<- train_clas[split1,]
-
-forest<-train(ing~. , data=train_pequeña_pred,method="rf",
-              trControl=ctrl,
-              family="binomial",metric="Sens")
-
+rf_pred<-train(ing~.,data=subset(training,select=c(-id,-Li,-Lp,-Pobre_1)),method="rf",
+               metric=metric,tuneLength=15,trControl=control)
 
 
 #------------------------------------------------------------------------------
