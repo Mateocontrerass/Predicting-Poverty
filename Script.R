@@ -1054,6 +1054,8 @@ resultados_general
 install.packages("randomForest")
 library("randomForest")
 
+
+
 control<-trainControl(method="repeatedcv",number=3,repeats = 3,
                       summaryFunction = twoClassSummary,search = "random")
 training$Pobre_1<-as.factor(training$Pobre_1)
