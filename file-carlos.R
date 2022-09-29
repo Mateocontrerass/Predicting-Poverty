@@ -1,10 +1,11 @@
 
 rm(list = ls())
+cat("\f")
 
 require(pacman)
 p_load(tidyverse,dplyr,here,skimr,tidyr,gamlr,modelsummary,caret,
        rio,knitr, kableExtra, rstudioapi,tidymodels,janitor,MLmetrics,
-       rattle,doParallel, themis, install = TRUE)
+       rattle,doParallel, ROCR, themis, install = TRUE)
 
 ## Carlos
 
@@ -18,7 +19,7 @@ p_load(tidyverse,dplyr,here,skimr,tidyr,gamlr,modelsummary,caret,
 
 ## Depurar base
 
-set.seed(666)
+set.seed(777)
 
 training <- data_rf_train
 rm(data_rf_train)
@@ -42,11 +43,11 @@ logit_training <- glm(Pobre_1 ~.,
 
 summary(logit_training)
 
-sub_set_training$Pobre_1_logit_training <- predict(logit_training,
-                                                   newdata = sub_set_training,
-                                                   type = "response") # Estimación de predicciones de Pobre_1za training
+Pobre_1_logit_training <- predict(logit_training,
+                                  newdata = sub_set_training,
+                                  type = "response") # Estimación de predicciones de Pobre_1za training
 
-summary(sub_set_training$Pobre_1_logit_training)
+colnames(sub_set_training)
 
 ggplot(data=sub_set_training , mapping=aes(Pobre_1,Pobre_1_logit_training)) + 
   geom_boxplot(aes(fill=as.factor(Pobre_1))) + theme_test() ## se observa que 0.35 puede servir para evitar subestimar Pobre_1za
@@ -57,7 +58,7 @@ ggplot(data=sub_set_training , mapping=aes(Pobre_1,Pobre_1_logit_training)) +
 #Regla 1
 regla1 <- 0.5 # Se define regla de Bayes
 
-sub_set_training$Pobre_1_hat1_training <- ifelse(sub_set_training$Pobre_1_logit_training>regla1,1,0) ## Prediccion de Pobre_1za
+Pobre_1_hat1_training <- ifelse(Pobre_1_logit_training>regla1,1,0) ## Prediccion de Pobre_1za
 
 
 ggplot(sub_set_training, aes(x = Pobre_1)) +
@@ -74,7 +75,7 @@ ggplot(sub_set_training, aes(x = Pobre_1_hat1_training)) +
        x = "",
        y = "Distribución")
 
-cm_logit_training_r1 <- confusionMatrix(data = factor(sub_set_training$Pobre_1_hat1_training),
+cm_logit_training_r1 <- confusionMatrix(data = factor(Pobre_1_hat1_training),
                                         reference = factor(sub_set_training$Pobre_1),
                                         mode = "sens_spec", positive = "1")
 
@@ -83,11 +84,11 @@ cm_logit_training_r1 <- cm_logit_training_r1$table
 skim(sub_set_training$Pobre_1)
 
 
-acc_training_r1 <- Accuracy(y_pred = sub_set_training$Pobre_1_hat1_training, y_true = sub_set_training$Pobre_1)
-pre_training_r1 <- Precision(y_pred = sub_set_training$Pobre_1_hat1_training, y_true = sub_set_training$Pobre_1, positive = 1)
-rec_training_r1 <- Recall(y_pred = sub_set_training$Pobre_1_hat1_training, y_true = sub_set_training$Pobre_1, positive = 1)
-f1_training_r1 <- F1_Score(y_pred = sub_set_training$Pobre_1_hat1_training, y_true = sub_set_training$Pobre_1, positive = 1)
-spf_training_r1 <- Specificity(y_pred = sub_set_training$Pobre_1_hat1_training, y_true = sub_set_training$Pobre_1, positive = 1)
+acc_training_r1 <- Accuracy(y_pred = Pobre_1_hat1_training, y_true = sub_set_training$Pobre_1)
+pre_training_r1 <- Precision(y_pred = Pobre_1_hat1_training, y_true = sub_set_training$Pobre_1, positive = 1)
+rec_training_r1 <- Recall(y_pred = Pobre_1_hat1_training, y_true = sub_set_training$Pobre_1, positive = 1)
+f1_training_r1 <- F1_Score(y_pred = Pobre_1_hat1_training, y_true = sub_set_training$Pobre_1, positive = 1)
+spf_training_r1 <- Specificity(y_pred = Pobre_1_hat1_training, y_true = sub_set_training$Pobre_1, positive = 1)
 FPR_training_r1 <- cm_logit_training_r1[2,1]/sum(cm_logit_training_r1[2,])
 FNR_training_r1 <- cm_logit_training_r1[1,2]/sum(cm_logit_training_r1[1,])
 
@@ -105,7 +106,7 @@ metricas_training_r1 <- data.frame(Modelo = "Logit - Regla de Bayes",
 #Regla 2
 regla2 <- 0.35 # Se define regla de predicción 
 
-sub_set_training$Pobre_1_hat2_training <- ifelse(sub_set_training$Pobre_1_logit_training>regla2,1,0) ## Prediccion de Pobre_1za
+Pobre_1_hat2_training <- ifelse(Pobre_1_logit_training>regla2,1,0) ## Prediccion de Pobre_1za
 
 
 ggplot(sub_set_training, aes(x = Pobre_1)) +
@@ -122,7 +123,7 @@ ggplot(sub_set_training, aes(x = Pobre_1_hat2_training)) +
        x = "",
        y = "Distribución")
 
-cm_logit_training_r2 <- confusionMatrix(data = factor(sub_set_training$Pobre_1_hat2_training),
+cm_logit_training_r2 <- confusionMatrix(data = factor(Pobre_1_hat2_training),
                                         reference = factor(sub_set_training$Pobre_1),
                                         mode = "sens_spec", positive = "1")
 
@@ -131,11 +132,11 @@ cm_logit_training_r2 <- cm_logit_training_r2$table
 skim(sub_set_training$Pobre_1)
 
 
-acc_training_r2 <- Accuracy(y_pred = sub_set_training$Pobre_1_hat2_training, y_true = sub_set_training$Pobre_1)
-pre_training_r2 <- Precision(y_pred = sub_set_training$Pobre_1_hat2_training, y_true = sub_set_training$Pobre_1, positive = 1)
-rec_training_r2 <- Recall(y_pred = sub_set_training$Pobre_1_hat2_training, y_true = sub_set_training$Pobre_1, positive = 1)
-f1_training_r2 <- F1_Score(y_pred = sub_set_training$Pobre_1_hat2_training, y_true = sub_set_training$Pobre_1, positive = 1)
-spf_training_r2 <- Specificity(y_pred = sub_set_training$Pobre_1_hat2_training, y_true = sub_set_training$Pobre_1, positive = 1)
+acc_training_r2 <- Accuracy(y_pred = Pobre_1_hat2_training, y_true = sub_set_training$Pobre_1)
+pre_training_r2 <- Precision(y_pred = Pobre_1_hat2_training, y_true = sub_set_training$Pobre_1, positive = 1)
+rec_training_r2 <- Recall(y_pred = Pobre_1_hat2_training, y_true = sub_set_training$Pobre_1, positive = 1)
+f1_training_r2 <- F1_Score(y_pred = Pobre_1_hat2_training, y_true = sub_set_training$Pobre_1, positive = 1)
+spf_training_r2 <- Specificity(y_pred = Pobre_1_hat2_training, y_true = sub_set_training$Pobre_1, positive = 1)
 FPR_training_r2 <- cm_logit_training_r2[2,1]/sum(cm_logit_training_r2[2,])
 FNR_training_r2 <- cm_logit_training_r2[1,2]/sum(cm_logit_training_r2[1,])
 
@@ -155,7 +156,7 @@ metricas_training_r2 <- data.frame(Modelo = "Logit - Gráfica",
 
 library("ROCR")
 
-predicciones_r1 <- prediction(sub_set_training$Pobre_1_hat1_training, sub_set_training$Pobre_1)
+predicciones_r1 <- prediction(Pobre_1_hat1_training, sub_set_training$Pobre_1)
 ROC_r1 <- performance(predicciones_r1,"tpr","fpr")
 plot(ROC_r1, main = "ROC curve", col="red")
 abline(a = 0, b = 1)
@@ -416,32 +417,11 @@ Pobre_1_logit_oversampling_test <- predict(logit_oversampling,
                                            newdata = sub_set_evaluating,
                                            type = "response") # Estimación de predicciones de Pobre_1za
 
-colnames(sub_set_evaluating)
-
-ggplot(data=sub_set_evaluating , mapping=aes(Pobre_1,Pobre_1_logit_evaluating)) + 
-  geom_boxplot(aes(fill=as.factor(Pobre_1))) + theme_test() ## parece que 0.35 es el valor para evitar subestimar a los Pobre_1s
-
-
 regla1 <- 0.5 # Se define regla de Bayes
 
-sub_set_evaluating$Pobre_1_hat1_evaluating <- ifelse(sub_set_evaluating$Pobre_1_logit_evaluating>regla1,1,0) ## Prediccion de Pobre_1za
+Pobre_1_hat_oversampling_test <- ifelse(Pobre_1_logit_oversampling_test>regla1,1,0) ## Prediccion de Pobre_1za
 
-
-ggplot(sub_set_evaluating, aes(x = Pobre_1)) +
-  geom_bar(fill = "darkblue") +
-  theme_bw() +
-  labs(title = "¿Es la persona Pobre_1?",
-       x = "",
-       y = "Distribución")
-
-ggplot(sub_set_evaluating, aes(x = Pobre_1_hat1_evaluating)) +
-  geom_bar(fill = "darkblue") +
-  theme_bw() +
-  labs(title = "¿Es la persona Pobre_1? - Predicción",
-       x = "",
-       y = "Distribución")
-
-cm_logit_evaluating_r1 <- confusionMatrix(data = factor(sub_set_evaluating$Pobre_1_hat1_evaluating),
+cm_logit_evaluating_r1 <- confusionMatrix(data = factor(Pobre_1_hat_oversampling_test),
                                           reference = factor(sub_set_evaluating$Pobre_1),
                                           mode = "sens_spec", positive = "1")
 
