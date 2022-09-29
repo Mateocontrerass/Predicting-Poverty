@@ -24,6 +24,9 @@ p_load(tidyverse,dplyr,here,skimr,tidyr,gamlr,modelsummary,caret,
 library(tidyverse)
 install.packages("mixgb")
 library("mixgb")
+install.packages("ROCR")
+library("ROCR")
+
 
 set.seed(666)
 
@@ -969,27 +972,29 @@ metricas %>%
 
 
 
+#LM para ingreso
+
+train_pred<-subset(training,select=c(-id,-Li,-Lp,-Pobre_1))
 
 
-
-
-
-
-
-
+reg_lin<-lm(ing~.,data=train_pred)
 
 
 summary(reg_lin)
 
 #Modelo fuera de muestra
-evaluating$ing_hat<-predict(reg_lin,evaluating)
+
+evaluating$ing_hat<-predict(reg_lin,subset(evaluating,select=c(-id,-Li,-Lp,-Pobre_1,-ing)))
+
+
+
 
 evaluating$pobre_hat<-ifelse(evaluating$ing_hat<evaluating$Lp,1,0)
 
 evaluating$pobre_hat<-factor(evaluating$pobre_hat)
 evaluating$Pobre_1<-factor(evaluating$Pobre_1)
 
-cm<-confusionMatrix(evaluating$pobre_hat,evaluating$Pobre_1,p=)
+cm<-confusionMatrix(evaluating$pobre_hat,evaluating$Pobre_1)
 
 
 resultados<-data.frame(Modelo="LM",Base="Predicción",
