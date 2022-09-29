@@ -24,6 +24,9 @@ p_load(tidyverse,dplyr,here,skimr,tidyr,gamlr,modelsummary,caret,
 library(tidyverse)
 install.packages("mixgb")
 library("mixgb")
+install.packages("ROCR")
+library("ROCR")
+
 
 set.seed(666)
 
