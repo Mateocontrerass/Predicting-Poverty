@@ -22,6 +22,7 @@ p_load(tidyverse,dplyr,here,skimr,tidyr,gamlr,modelsummary,caret,
        rio,knitr, kableExtra, rstudioapi,tidymodels,janitor,MLmetrics,
        rattle,doParallel, install = TRUE)
 library(tidyverse)
+library("mixgb")
 
 set.seed(666)
 
@@ -272,9 +273,22 @@ rm(tr_cat,te_cat,objeto,base_completa1,test1)
   #linea pobreza:LP : no utilizar
   
   
+identificadores<-subset(test,select=c("id","Li","Lp"))
+
+train_set<-subset(test,select=c(-id,-Li,-Lp))
+#Esto para guardar estas variables que no pueden entrar en el mixgb
+
+imputed_test<-mixgb(data=train_set,verbose=TRUE,m=1)
+#Imputación de los datos
 
 
-  
+test<-imputed_test[[1]]
+#Saco el primer dataframe
+
+
+test<-cbind(identificadores,test)
+
+
   
   
   
@@ -304,6 +318,26 @@ evaluating = base_completa[-split1,]
 rm(base_completa)
 rm(columnas,columnas_test,remover,split1,variables_categoricas)
   #Para mantener el espacio de trabajo limpio
+
+
+
+identificadores<-subset(evaluating,select=c("id","Li","Lp"))
+
+ev_set<-subset(evaluating,select=c(-id,-Li,-Lp))
+#Esto para guardar estas variables que no pueden entrar en el mixgb
+
+imputed_ev<-mixgb(data=ev_set,verbose=TRUE,m=1)
+#Imputación de los datos
+
+
+evaluating<-imputed_ev[[1]]
+#Saco el primer dataframe
+
+
+evaluating<-cbind(identificadores,evaluating)
+
+
+
 
 save(evaluating,file="data/evaluating")
 
@@ -347,7 +381,6 @@ prop.table(table(evaluating$Pobre))
   #Imputación de datos
 
   #install.packages("mixgb")               
-  library("mixgb")
 
   identificadores<-subset(training,select=c("id","Li","Lp"))
   
@@ -362,7 +395,7 @@ prop.table(table(evaluating$Pobre))
   #Saco el primer dataframe
 
   
-  data_rf_train<-cbind(identificadores,data_imputada)
+  training<-cbind(identificadores,data_imputada)
   #Pego los identificadores
   
   
@@ -373,7 +406,6 @@ prop.table(table(evaluating$Pobre))
   
   #Base train imputada  
   load("data/entrenamiento")
-  
   training<-data_rf_train
   
   colnames(data_rf_train)
@@ -389,7 +421,6 @@ prop.table(table(evaluating$Pobre))
   #Por algún motivo, el objeto se guarda como : "data_rf_train"
   
   
-
 
 #------------------------------------------------------------------------------
 
@@ -482,7 +513,7 @@ ggplot(resultados_lasso, aes(x = Lambda, y = RMSE)) +
 
   #LM para ingreso
 
-train_pred<-subset(data_rf_train,select=c(-id,-Li,-Lp,-Pobre))
+train_pred<-subset(training,select=c(-id,-Li,-Lp,-Pobre_1))
 
 
 reg_lin<-lm(ing~.,data=train_pred)
@@ -908,126 +939,64 @@ metricas %>%
 
 
 
+summary(reg_lin)
+
+#Modelo fuera de muestra
+evaluating$ing_hat<-predict(reg_lin,evaluating)
+
+evaluating$pobre_hat<-ifelse(evaluating$ing_hat<evaluating$Lp,1,0)
+
+evaluating$pobre_hat<-factor(evaluating$pobre_hat)
+evaluating$Pobre_1<-factor(evaluating$Pobre_1)
+
+cm<-confusionMatrix(evaluating$pobre_hat,evaluating$Pobre_1,p=)
 
 
-
-
-
-
-  # Modelo basico de clasificación sin imputación para un arbol
-  
-modelo1 <- decision_tree(mode="classification") 
-  #Establecimiento del modelo
-
-training$Pobre<-factor(training$Pobre)
-evaluating$Pobre<-factor(evaluating$Pobre)
-
-
-modelo1_fit <- fit(modelo1, Pobre ~ . -id -Li -Lp, data = training)
-
-modelo1_fit
-
-training$Pobre
-testing$pobre
-
-
-  # Desempeño
-
-y_hat_insample <- predict(modelo1_fit, training)$.pred_class
-y_hat_outsample <- predict(modelo1_fit, evaluating)$.pred_class
-
-
-training$Pobre
-
-acc_in <- Accuracy(y_true = training$Pobre, y_pred = y_hat_insample)
-acc_in <- round(100*acc_in, 2)
-pre_in <- Precision(y_true = training$Pobre, y_pred = y_hat_insample)
-pre_in <- round(100*pre_in, 2)
-recall_in <- Recall(y_true = training$Pobre, y_pred = y_hat_insample)
-recall_in <- round(100*recall_in, 2)
-
-f1_in <- F1_Score(y_true = training$Pobre, y_pred = y_hat_insample)
-
-f1_in <- round(100*f1_in, 2)
-
-
-evaluating$Pobre
-
-acc_out <- Accuracy(y_true = evaluating$Pobre, y_pred = y_hat_outsample)
-acc_out <- round(100*acc_out, 2)
-pre_out <- Precision(y_true = evaluating$Pobre, y_pred = y_hat_outsample)
-pre_out <- round(100*pre_out, 2)
-recall_out <- Recall(y_true = evaluating$Pobre, y_pred = y_hat_outsample)
-recall_out <- round(100*recall_out, 2)
-
-f1_out <- F1_Score(y_true = evaluating$Pobre, y_pred = y_hat_outsample)
-
-f1_out <- round(100*f1_out, 2)
-
-resultados <- data.frame(Modelo = "Modelo 1", Base = c("Train", "Test"), 
-                         Accuracy = c(acc_in, acc_out), 
-                         Precision = c(pre_in, pre_out),
-                         Recall = c(recall_in, recall_out),
-                         F1 = c(f1_in, f1_out))
-
-kbl(resultados) %>%
-  kable_styling(full_width = T)
-
-
-  # Modelo basico de clasificación con imputación
+resultados<-data.frame(Modelo="LM",Base="Predicción",
+                       Accuracy=cm$overall[1],
+                       Sensitivity=cm$byClass[1],
+                       Specificity=cm$byClass[2])
   
 
-modelo1_fit <- fit(modelo1, Pobre ~ . -id -Li -Lp, data = data_rf_train)
 
-modelo1_fit
-
-
-# Desempeño
-
-y_hat_insample <- predict(modelo1_fit, data_rf_train)$.pred_class
-y_hat_outsample <- predict(modelo1_fit, evaluating)$.pred_class
-
-
-training$Pobre
-
-acc_in <- Accuracy(y_true = data_rf_train$Pobre, y_pred = y_hat_insample)
-acc_in <- round(100*acc_in, 2)
-pre_in <- Precision(y_true = data_rf_train$Pobre, y_pred = y_hat_insample)
-pre_in <- round(100*pre_in, 2)
-recall_in <- Recall(y_true = training$Pobre, y_pred = y_hat_insample)
-recall_in <- round(100*recall_in, 2)
-
-f1_in <- F1_Score(y_true = data_rf_train$Pobre, y_pred = y_hat_insample)
-
-f1_in <- round(100*f1_in, 2)
-
-
-evaluating$Pobre
-
-acc_out <- Accuracy(y_true = evaluating$Pobre, y_pred = y_hat_outsample)
-acc_out <- round(100*acc_out, 2)
-pre_out <- Precision(y_true = evaluating$Pobre, y_pred = y_hat_outsample)
-pre_out <- round(100*pre_out, 2)
-recall_out <- Recall(y_true = evaluating$Pobre, y_pred = y_hat_outsample)
-recall_out <- round(100*recall_out, 2)
-
-f1_out <- F1_Score(y_true = evaluating$Pobre, y_pred = y_hat_outsample)
-
-f1_out <- round(100*f1_out, 2)
-
-resultados2 <- data.frame(Modelo = "Modelo 1 imp", Base = c("Train", "Test"), 
-                         Accuracy = c(acc_in, acc_out), 
-                         Precision = c(pre_in, pre_out),
-                         Recall = c(recall_in, recall_out),
-                         F1 = c(f1_in, f1_out))
-
-kbl(resultados) %>%
-  kable_styling(full_width = T)
-
-resultados <- rbind(resultados, resultados2)
 resultados
 
-#Peor resultado out of sample para imputados :(
+
+#------------------------------------------------------------------------------
+
+# Decision tree
+
+
+  # Clasificación
+
+training$Pobre_1<-as.factor(training$Pobre_1)
+train_clas<-subset(training,select=c(-id,-Li,-Lp,-ing))
+
+
+Control=trainControl(method= "repeatedcv",number=3,repeats=3,
+                     summaryFunction=multiClassSummary)
+
+arbol=caret::train(Pobre_1~.,data=train_clas,method="rpart",trControl=Control,tuneLength=10)
+
+arbol
+
+evaluating$pobre_hat_arbol<-predict(arbol,subset(evaluating,select=-c(id,Li,Lp,Pobre_1,ing)))
+                         
+cm_arbol<-confusionMatrix(evaluating$pobre_hat_arbol,reference = evaluating$Pobre_1)
+cm_arbol
+
+resultados2<-data.frame(Modelo="Arbol",Base="Clasificación",
+                       Accuracy=cm_arbol$overall[1],
+                       Sensitivity=cm_arbol$byClass[1],
+                       Specificity=cm_arbol$byClass[2])
+
+resultados_general<-rbind(resultados,resultados2)
+resultados_general
+
+
+
+
+
 
 #------------------------------------------------------------------------------
 
@@ -1036,32 +1005,15 @@ resultados
 install.packages("randomForest")
 library("randomForest")
 
-#Base de datos para clasificación:
+control<-trainControl(method="repeatedcv",number=3,repeats = 3,
+                      summaryFunction = twoClassSummary,search = "random")
+training$Pobre_1<-as.factor(training$Pobre_1)
+metric<-"Sensitivity"
+mtry<-sqrt(ncol(training))
 
-train_clas<-subset(data_rf_train,select=c(-id,-Li,-Lp,-ing))
+rf_clas<-train(Pobre_1~.,data=subset(training,select=c(-id,-Li,-Lp,-ing)),method="rf",
+               metric=metric,tuneLength=15,trControl=control)
 
-
-#Demasiado pesado, voy a partir la base otra vez
-
-split1 <- createDataPartition(train_clas$Pobre , p = 0.1)[[1]]
-
-train_pequeña<- train_clas[split1,]
-
-
-
-ctrl<-trainControl(method="cv",number=2,verbose=TRUE,savePredictions=T,
-                   summaryFunction = twoClassSummary )
-
-
-forest<-train(Pobre~. , data=train_pequeña,method="rf",
-              trControl=ctrl,
-              family="binomial",
-              metric="Sens")
-
-
-ttest<-subset(test,select=c(-id,-Li,-Lp))
-
-y_out<-predict(forest,ttest)
 
 
 #------------------------------------------------------------------------------
@@ -1087,28 +1039,6 @@ forest<-train(ing~. , data=train_pequeña_pred,method="rf",
 
 
 
-library(tidytable)  
-
-base_completa<-get_dummies(base_completa,cols=c("Depto","P6020","P6050","P6090","P6100",
-                                                "P6210","P6210s1","P6240","P7505",
-                                                "P5090","Clase","Pobre"), drop_first = T)
-
-base_completa<-subset(base_completa,select=c(-Depto,-P6020,-P6050,-P6090,-P6100,
-                                             -P6210,-P6210s1,-P6240,-P7505,
-                                             -P5090,-Clase,-Pobre))
-
-
-test<-get_dummies(test,cols=c("Depto","P6020","P6050","P6090","P6100",
-                              "P6210","P6210s1","P6240","P7505",
-                              "P5090","Clase"), drop_first = T)
-
-test<-subset(test,select=c(-Depto,-P6020,-P6050,-P6090,-P6100,
-                           -P6210,-P6210s1,-P6240,-P7505,
-                           -P5090,-Clase))
-
-
-compare_df_cols(test,base_completa)
-detach("package:tidytable", unload = TRUE)
 
 
 
