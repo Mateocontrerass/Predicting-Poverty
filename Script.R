@@ -970,12 +970,19 @@ metricas %>%
 
 
 
+#LM para ingreso
+
+train_pred<-subset(training,select=c(-id,-Li,-Lp,-Pobre_1))
 
 
+reg_lin<-lm(ing~.,data=train_pred)
 
 
+summary(reg_lin)
 
+#Modelo fuera de muestra
 
+evaluating$ing_hat<-predict(reg_lin,subset(evaluating,select=c(-id,-Li,-Lp,-Pobre_1,-ing)))
 
 
 
