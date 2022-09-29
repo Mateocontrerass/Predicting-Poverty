@@ -940,7 +940,7 @@ train_pred<-subset(training,select=c(-id,-Li,-Lp,-Pobre_1))
 
 reg_lin<-lm(ing~.,data=train_pred)
 
-
+"hola"
 summary(reg_lin)
 
 #Modelo fuera de muestra
