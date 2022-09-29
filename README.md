@@ -3,6 +3,10 @@
 ## Motivación
 Este proyecto se desarrolla como respuesta al problem set 2 de la clase Big data y Machine Learning. La motivación del trabajo investigativo surge en la necesidad de determinar si un hogar se encuentra en situación de pobreza de manera más rapida y barata que ejecutando las recurrentes encuestas con las que se obtiene esta información. Al final, todo este esfuerzo hace parte de facilitar intervenciones de politica publica más eficientes, mejorando el impacto y el costo/beneficio de estas estrategias.
 
+## Estructura del repositorio
+
+El repositorio cuenta con 4 carpetas principales: _Data, Scripts, Views y Document_. En la carpeta _Data_ se encuentran las bases de datos utilizadas para el desarrollo del proyecto. En _Scripts_ están los cuadernos en los cuales se escribió todo el codigo utilizado. En _Views_ se guardaron todas las imagenes y resultados obtenidos. Por ultimo, en la carpeta _Document_ se guardó el archivo final requerido por el problem set.
+
 ## ¿Como se hizo?
 
 ### Tecnología utilizada
@@ -37,7 +41,10 @@ Algunos de las modificaciones más importantes hechas a las bases de datos son:
 i) Se agregaron las bases de hogar y personas para tener dos bases de datos: una para entrenamiento y la otra para prueba.
 
 ii) Se imputaron las observaciones que tenian valores vacios para facilitar la implementación de los modelos predictivos. El algoritmo utilizado fue obtenido de la libreria `mixgb`que facilita el comando con el mismo nombre que ejecuta una estructura de imputación multiple basada en _XGBoost
-, boostraping y predictive mean matching_.
+, boostraping y predictive mean matching_. Para más información sobre la libreria está este [repositorio.](https://github.com/agnesdeng/mixgb/blob/master/README.md)
 
 iii) Por ultimo, se estableció que la aproximación más sencilla frente a las variables categoricas era crear una variable indicadora para los n-1 niveles de cada una. 
+
+## ¿Cómo replicar los resultados?
+Para replicar los resultados se sugiere clonar el repositorio entero a una carpeta de su preferencia y correr el __Script__ provisto. No hay necesidad de establecer el directorio dado que se hace automaticamente. Sin embargo, puede que se necesiten instalar algunas librerias a mano.
 
