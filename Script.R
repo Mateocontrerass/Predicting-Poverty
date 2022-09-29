@@ -561,6 +561,8 @@ sub_set_training <- dummy_cols(sub_set_training,
                                select_columns = c("Clase", "P6090", "P6100", "P6210", 
                                                   "P6240", "P7505", "Depto", "P5090"))
 
+#Modelo fuera de muestra
+evaluating$ing_hat<-predict(reg_lin,evaluating)
 
 sub_set_training <- subset(sub_set_training, select = -c(Clase, P6090, P6100, P6210, 
                                                          P6240, P7505, Depto, P5090))
@@ -843,9 +845,11 @@ metricas_evaluating_r2 <- data.frame(Modelo = "Logit - Gráfica",
                                      "FPR" = FPR_evaluating_r2,
                                      "FNR" = FNR_evaluating_r2)
 
+#------------------------------------------------------------------------------
 
 
 
+  # Clasificación
 
 
 regla <- 0.35 # Se define regla de predicción 
