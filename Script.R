@@ -23,6 +23,7 @@ p_load(tidyverse,dplyr,here,skimr,tidyr,gamlr,modelsummary,caret,
        rattle,doParallel, install = TRUE)
 library(tidyverse)
 
+set.seed(666)
 
 
 
@@ -289,7 +290,6 @@ rm(tr_cat,te_cat,objeto,base_completa1,test1)
 prop.table(table(base_completa$Pobre))
 #74% personas no pobres y 25% de personas pobres.
 
-set.seed(666)
 
 split1 <- createDataPartition(base_completa$Pobre , p = 0.7)[[1]]
 
@@ -366,13 +366,13 @@ prop.table(table(evaluating$Pobre))
   #Pego los identificadores
   
   
-  save(data_rf_train,file="data/data_imputada2")
+  save(data_rf_train,file="data/entrenamiento")
 
   
 #------------------------------------------------------------------------------
   
   #Base train imputada  
-  load("data/data_imputada2")
+  load("data/entrenamiento")
   
   training<-data_rf_train
   
@@ -385,7 +385,6 @@ prop.table(table(evaluating$Pobre))
   #Base evaluación
   load("data/evaluating")
   
-
 
   #Por algún motivo, el objeto se guarda como : "data_rf_train"
   
