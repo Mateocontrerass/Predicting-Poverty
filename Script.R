@@ -504,6 +504,9 @@ y_out_lm<-predict(reg_lin,evaluating)
 
 #-------------------------------------------------------------------------------
 
+load("data/data_imputada2")
+load("data/evaluating")
+
 ### train
 
 ## Depurar base
