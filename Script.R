@@ -24,9 +24,6 @@ p_load(tidyverse,dplyr,here,skimr,tidyr,gamlr,modelsummary,caret,
 library(tidyverse)
 install.packages("mixgb")
 library("mixgb")
-install.packages("ROCR")
-library("ROCR")
-
 
 set.seed(666)
 
@@ -533,6 +530,8 @@ y_hat_out2 <- predict.glmnet(modelo_lasso,
                              s = mejor_lambda_lasso)
 
 # Métricas dentro y fuera de muestra. Paquete MLmetrics
+
+library(MLmetrics)
 r2_in2 <- R2_Score(y_pred = exp(y_hat_in2), y_true = exp(training$ing))
 rmse_in2 <- RMSE(y_pred = exp(y_hat_in2), y_true = exp(training$ing))
 
@@ -972,29 +971,27 @@ metricas %>%
 
 
 
-#LM para ingreso
-
-train_pred<-subset(training,select=c(-id,-Li,-Lp,-Pobre_1))
 
 
-reg_lin<-lm(ing~.,data=train_pred)
+
+
+
+
+
+
 
 
 summary(reg_lin)
 
 #Modelo fuera de muestra
-
-evaluating$ing_hat<-predict(reg_lin,subset(evaluating,select=c(-id,-Li,-Lp,-Pobre_1,-ing)))
-
-
-
+evaluating$ing_hat<-predict(reg_lin,evaluating)
 
 evaluating$pobre_hat<-ifelse(evaluating$ing_hat<evaluating$Lp,1,0)
 
 evaluating$pobre_hat<-factor(evaluating$pobre_hat)
 evaluating$Pobre_1<-factor(evaluating$Pobre_1)
 
-cm<-confusionMatrix(evaluating$pobre_hat,evaluating$Pobre_1)
+cm<-confusionMatrix(evaluating$pobre_hat,evaluating$Pobre_1,p=)
 
 
 resultados<-data.frame(Modelo="LM",Base="Predicción",
