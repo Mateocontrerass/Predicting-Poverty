@@ -84,7 +84,7 @@ indices_chiquitos<-which(objeto$complete_rate>.5)
 
 
   #Indices de complete rate>0.5
-base_completa<-base_completa[,c(indices_chiquitos)]
+base_completa<-subset(base_completa,select=c(indices_chiquitos))
 
 base_completa<-cbind(base_completa,ing)
   #reoincorporamos la variable de ingreso
@@ -111,6 +111,10 @@ test<-subset(test,select=c(-Dominio,-Orden,-Fex_c,-Fex_dpto))
 
 rm(hogares,personas)
   #Borramos las bases individuales
+#------------------------------------------------------------------------------
+
+
+
 
 columnas_test<-c(names(test))
 
@@ -129,15 +133,108 @@ columnas_base<-c(names(base_completa))
   columnas<-append(columnas_total,remover)
   #Agregamos pobre a la base total
   
-  test<-test[,columnas_total]
+  test<-subset(test,select=c(columnas_total))
   #Para que test tenga las mismas variables
 
-  base_completa<-base_completa[,columnas]
+  base_completa<-subset(base_completa,select=(columnas))
   #Depuramos la base para que tenga las mismas columnas que test.
   #Si no se tienen las mismas features falla el modelo.
   
+#------------------------------------------------------------------------------
+  
+  
+  
+  variables_categoricas <- c("Depto","P6020","P6050","P6090","P6100",
+                             "P6210","P6210s1","P6240","P7505",
+                             "P5090","Clase","Pobre")
+  
+  
+  
+  base_completa[,variables_categoricas]<-lapply(base_completa[,variables_categoricas],factor)
+  
+  variables_categoricas <- c("Depto","P6020","P6050","P6090","P6100",
+                             "P6210","P6210s1","P6240","P7505",
+                             "P5090","Clase")
+  
+  
+  test[,variables_categoricas]<-lapply(test[,variables_categoricas],factor)  
+  
+  #------------------------------------------------------------------------------
+  
+library(tidytable)
+tr_cat<-subset(base_completa,select=c("Depto","P6020","P6050","P6090","P6100",
+                                      "P6210","P6210s1","P6240","P7505",
+                                      "P5090","Clase","Pobre"))
+
+tr_cat<-get_dummies(tr_cat,drop_first = T,dummify_na=F)
+
+tr_cat<-subset(tr_cat,select=c(-Depto,-P6020,-P6050,-P6090,-P6100,
+                                -P6210,-P6210s1,-P6240,-P7505,
+                                -P5090,-Clase,-Pobre))
+
+te_cat<-subset(test,select=c("Depto","P6020","P6050","P6090","P6100",
+                                            "P6210","P6210s1","P6240","P7505",
+                                            "P5090","Clase"))
+
+te_cat<-get_dummies(te_cat,drop_first = T,dummify_na=F)
 
 
+te_cat<-subset(te_cat,select=c(-Depto,-P6020,-P6050,-P6090,-P6100,
+                                -P6210,-P6210s1,-P6240,-P7505,
+                                -P5090,-Clase))
+
+
+colnames(te_cat)
+colnames(tr_cat)
+detach("package:tidytable", unload = TRUE)
+
+#Reiniciar si el codigo falla porque tidytable cambia parte de la sintaxis :))))
+
+
+
+#------------------------------------------------------------------------------
+
+base_completa1<-cbind(base_completa,tr_cat)
+
+base_completa1<-subset(base_completa1, select=c(-Depto,-P6020,-P6050,-P6090,-P6100,
+                               -P6210,-P6210s1,-P6240,-P7505,
+                               -P5090,-Clase,-Pobre))
+
+test1<-cbind(test,te_cat)
+
+test1<-subset(test1,select=c(-Depto,-P6020,-P6050,-P6090,-P6100,
+                                             -P6210,-P6210s1,-P6240,-P7505,
+                                             -P5090,-Clase))
+
+columnas_test<-c(names(test1))
+
+columnas_base<-c(names(base_completa1))
+
+#Sacar las columnas presentes en en los DF
+
+
+columnas_total<-intersect(columnas_base,columnas_test)
+#Intersección entre variables comunes
+
+columnas_total
+
+remover <- c("Pobre_1","ing")
+
+columnas<-append(columnas_total,remover)
+#Agregamos pobre a la base total
+
+test1<-subset(test1,select=c(columnas_total))
+#Para que test tenga las mismas variables
+
+base_completa1<-subset(base_completa1,select=(columnas))
+#Depuramos la base para que tenga las mismas columnas que test.
+#Si no se tienen las mismas features falla el modelo.
+
+
+test<-test1
+base_completa<-base_completa1
+
+rm(tr_cat,te_cat,objeto,base_completa1,test1)
 #------------------------------------------------------------------------------
   #Factor para variables de df test
   
@@ -175,41 +272,15 @@ columnas_base<-c(names(base_completa))
   
   
 
-  
-  variables_categoricas <- c("Depto","P6020","P6050","P6090","P6100",
-                             "P6210","P6210s1","P6240","P7505",
-                             "P5090","Clase","Pobre")
-  
 
-  c(names(base_completa))
-    
-  base_completa[,variables_categoricas]<-lapply(base_completa[,variables_categoricas],factor)
   
-  variables_categoricas <- c("Depto","P6020","P6050","P6090","P6100",
-                             "P6210","P6210s1","P6240","P7505",
-                             "P5090","Clase")
   
-  test[,variables_categoricas]<-lapply(test[,variables_categoricas],factor)
+  
   
   save(test,file="data/test")
   
-  skim(base_completa)
+
   
-  #filtro<-base_completa$Clase==1
-  #base_completa$Clase[filtro]<-0
-  
-  #filtro<-base_completa$Clase==2
-  #base_completa$Clase[filtro]<-1
-  
-  unique(base_completa$Clase)
-
-  #Volver 1 y 0 la variable Clase.
-
-  base_completa$Clase<-as.factor(base_completa$Clase)
-
-
-
-
 #------------------------------------------------------------------------------
 
 
@@ -289,9 +360,6 @@ prop.table(table(evaluating$Pobre))
   
   data_imputada<-imputed_test[[1]]
   #Saco el primer dataframe
-  skim(data_imputada)
-  #Verifico los NAN
-  
 
   
   data_rf_train<-cbind(identificadores,data_imputada)
@@ -305,11 +373,19 @@ prop.table(table(evaluating$Pobre))
   
   #Base train imputada  
   load("data/data_imputada2")
+  
+  training<-data_rf_train
+  
+  colnames(data_rf_train)
+  
   #Base test
   load("data\\test")
+  
+
   #Base evaluación
   load("data/evaluating")
   
+
 
   #Por algún motivo, el objeto se guarda como : "data_rf_train"
   
@@ -405,9 +481,43 @@ ggplot(resultados_lasso, aes(x = Lambda, y = RMSE)) +
 
 #------------------------------------------------------------------------------
 
+  #LM para ingreso
+
+train_pred<-subset(data_rf_train,select=c(-id,-Li,-Lp,-Pobre))
+
+
+reg_lin<-lm(ing~.,data=train_pred)
+summary(reg_lin)
+
+
+y_out_lm<-predict(reg_lin,evaluating)
+
+
+#------------------------------------------------------------------------------
+
 # Random Forest (Mateo)
 
-  # Modelo basico de clasificación sin imputación
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  # Modelo basico de clasificación sin imputación para un arbol
   
 modelo1 <- decision_tree(mode="classification") 
   #Establecimiento del modelo
@@ -552,6 +662,9 @@ forest<-train(Pobre~. , data=train_pequeña,method="rf",
               metric="Sens")
 
 
+ttest<-subset(test,select=c(-id,-Li,-Lp))
+
+y_out<-predict(forest,ttest)
 
 
 #------------------------------------------------------------------------------
@@ -570,6 +683,35 @@ train_pequeña_pred<- train_clas[split1,]
 forest<-train(ing~. , data=train_pequeña_pred,method="rf",
               trControl=ctrl,
               family="binomial",metric="Sens")
+
+
+
+#------------------------------------------------------------------------------
+
+
+
+library(tidytable)  
+
+base_completa<-get_dummies(base_completa,cols=c("Depto","P6020","P6050","P6090","P6100",
+                                                "P6210","P6210s1","P6240","P7505",
+                                                "P5090","Clase","Pobre"), drop_first = T)
+
+base_completa<-subset(base_completa,select=c(-Depto,-P6020,-P6050,-P6090,-P6100,
+                                             -P6210,-P6210s1,-P6240,-P7505,
+                                             -P5090,-Clase,-Pobre))
+
+
+test<-get_dummies(test,cols=c("Depto","P6020","P6050","P6090","P6100",
+                              "P6210","P6210s1","P6240","P7505",
+                              "P5090","Clase"), drop_first = T)
+
+test<-subset(test,select=c(-Depto,-P6020,-P6050,-P6090,-P6100,
+                           -P6210,-P6210s1,-P6240,-P7505,
+                           -P5090,-Clase))
+
+
+compare_df_cols(test,base_completa)
+detach("package:tidytable", unload = TRUE)
 
 
 
