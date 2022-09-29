@@ -355,6 +355,8 @@ train_oversampling <- subset(train_oversampling, select = -c(Pobre_1_logit_train
                                                              Pobre_1_hat1_training,
                                                              Pobre_1_hat2_training))
 
+colnames(train_oversampling)
+
 logit_oversampled <- glm(Pobre_1 ~.,
                          data = train_oversampling, family = binomial(link="logit")) ## Estimar modelo logit en evaluate
 
@@ -417,7 +419,15 @@ metricas_oversampling <- data.frame(Modelo = "Logit - Regla de Bayes",
                                      "FPR" = FPR_oversampling,
                                      "FNR" = FNR_oversampling)
 
+## Curva de ROC
 
+predicciones_oversampling <- prediction(train_oversampling$Pobre_1_hat_oversamping, train_oversampling$Pobre_1)
+ROC_oversampling <- performance(predicciones_oversampling,"tpr","fpr")
+plot(ROC_oversampling, main = "ROC curve", col="red")
+abline(a = 0, b = 1)
+
+auc_ROC_r2 <- performance(predicciones_r2, measure = "auc")
+auc_ROC_r2@y.values[[1]]
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
