@@ -683,6 +683,9 @@ prop.table(table(evaluating$Pobre))
   resultados_e
   
   
+  resultados_regularizacion<-rbind(resultados_r,resultados_l, resultados_e)
+  resultados_regularizacion
+  
 #------------------------------------------------------------------------------
 
   #LM para ingreso
