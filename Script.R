@@ -965,9 +965,6 @@ metricas %>%
 
 #------------------------------------------------------------------------------
 
-# Random Forest (Mateo)
-
-
 
 
 #LM para ingreso
@@ -978,20 +975,11 @@ train_pred<-subset(training,select=c(-id,-Li,-Lp,-Pobre_1))
 reg_lin<-lm(ing~.,data=train_pred)
 
 
-summary(reg_lin)
-
 #Modelo fuera de muestra
 
-evaluating$ing_hat<-predict(reg_lin,subset(evaluating,select=c(-id,-Li,-Lp,-Pobre_1,-ing)))
+evaluating$ing_hat<-predict(reg_lin,subset(evaluating,select=c(-id,-Li,-Lp,-Pobre_1)))
 
 
-
-
-"hola"
-summary(reg_lin)
-
-#Modelo fuera de muestra
-evaluating$ing_hat<-predict(reg_lin,evaluating)
 
 evaluating$pobre_hat<-ifelse(evaluating$ing_hat<evaluating$Lp,1,0)
 
@@ -1069,7 +1057,49 @@ rf_clas<-train(Pobre_1~.,data=subset(training,select=c(-id,-Li,-Lp,-ing)),method
 
 #------------------------------------------------------------------------------
 
-  # Random Forest para predicción de ingreso
+p_load("ranger",install=T)
+
+
+tr_m<-subset(training,select=c(-id,-Li,-Lp,-ing))
+ev_m<-subset(evaluating,select=c(-id,-Li,-Lp,-ing))
+
+tr_m$Pobre_1<-as.factor(tr_m$Pobre_1)
+ev_m$Pobre_1<-as.factor(ev_m$Pobre_1)
+
+  #RF
+grid_default <- expand.grid(nrounds = c(100,200),
+                            max_depth = c(4,6,8),
+                            eta = c(0.01,0.1,0.5),
+                            gamma = c(0,1),
+                            min_child_weight = c(10,50),
+                            colsample_bytree = c(0.7),
+                            subsample = c(0.6))
+
+fiveStats <- function(...) c(twoClassSummary(...), defaultSummary(...))
+
+ctrl<- trainControl(method = "cv",
+                            number = 2,
+                            summaryFunction = fiveStats,
+                            verbose=T)
+
+
+xgtree <- train(Pobre_1~.,data=tr_m,method="xgbTree",trControl=ctrl,metric="Sens",
+                tuneGrid=grid_default)
+
+
+
+ev_m$pred_arbol <-predict(xgtree,newdata=ev_m)
+
+cm_xg <- confusionMatrix(ev_m$pred_arbol,ev_m$Pobre_1)
+
+
+resultados_xg<-data.frame(Modelo="XGBoost",Base="Clasificación",
+                        Accuracy=cm_xg$overall[1],
+                        Sensitivity=cm_xg$byClass[1],
+                        Specificity=cm_xg$byClass[2])
+
+resultados_xg
+
 
 
 
