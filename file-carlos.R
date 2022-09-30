@@ -389,7 +389,7 @@ spf_oversampling <- Specificity(y_pred = Pobre_1_hat_oversamping, y_true = train
 FPR_oversampling <- cm_logit_oversampling[2,1]/sum(cm_logit_oversampling[2,])
 FNR_oversampling <- cm_logit_oversampling[1,2]/sum(cm_logit_oversampling[1,])
 
-metricas_oversampling <- data.frame(Modelo = "Logit - Regla de Bayes",
+metricas_oversampling <- data.frame(Modelo = "Logit - correccion de imbalance",
                                      "Muestreo" = "Oversampling", 
                                      "Evaluación" = "Dentro de muestra",
                                      "Accuracy" = acc_oversampling,
@@ -427,7 +427,6 @@ cm_logit_oversampling_evaluate <- confusionMatrix(data = factor(Pobre_1_hat_over
                                                   reference = factor(evaluating$Pobre_1),
                                                   mode = "sens_spec", positive = "1")
 
-
 cm_logit_oversampling_evaluate <- cm_logit_oversampling_evaluate$table
 
 skim(evaluating$Pobre_1)
@@ -441,7 +440,7 @@ spf_oversampling_evaluate <- Specificity(y_pred = Pobre_1_hat_oversamping_evalua
 FPR_oversampling_evaluate <- cm_logit_oversampling_evaluate[2,1]/sum(cm_logit_oversampling_evaluate[2,])
 FNR_oversampling_evaluate <- cm_logit_oversampling_evaluate[1,2]/sum(cm_logit_oversampling_evaluate[1,])
 
-metricas_oversampling_evaluate <- data.frame(Modelo = "Logit - Regla de Bayes",
+metricas_oversampling_evaluate <- data.frame(Modelo = "Logit - correcion imbalance",
                                             "Muestreo" = "Oversampling", 
                                             "Evaluación" = "Fuera de muestra",
                                             "Accuracy" = acc_oversampling_evaluate,
@@ -453,13 +452,24 @@ metricas_oversampling_evaluate <- data.frame(Modelo = "Logit - Regla de Bayes",
                                             "FNR" = FNR_oversampling_evaluate)
 
 
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+
+## Remuestreo - Undersampling
+
+
+
+
+
+
 
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
-metricas <- bind_rows(metricas_training_r1, metricas_training_r2, metricas_evaluating_r1, metricas_evaluating_r2,
-                      metricas_oversampling)#, metricas_oversampling_evaluate)
+metricas <- bind_rows(metricas_training_r1, metricas_evaluating_r1, metricas_training_r2,
+                      metricas_evaluating_r2, metricas_oversampling, metricas_oversampling_evaluate)
+
 metricas %>%
   kbl(digits = 2)  %>%
   kable_styling(full_width = T)
