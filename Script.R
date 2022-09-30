@@ -1359,8 +1359,8 @@ metricas <- bind_rows(metricas_training_r1, metricas_evaluating_r1, metricas_tra
                       metricas_undersampling, metricas_undersampling_evaluate,
                       metricas_threshold_op_training, metricas_threshold_op_evaluating)
 
-metricas1 <- bind_rows(metricas_evaluating_r1, metricas_evaluating_r2, metricas_oversampling_evaluate,
-                       metricas_undersampling_evaluate, metricas_threshold_op_evaluating)
+metricas1 <- bind_rows(metricas_evaluating_r1, metricas_evaluating_r2, metricas_threshold_op_evaluating,
+                       metricas_oversampling_evaluate, metricas_undersampling_evaluate)
 
 metricas %>%
   kbl(digits = 2)  %>%
