@@ -440,17 +440,18 @@ prop.table(table(evaluating$Pobre))
   #install.packages("glmnet")
   library(glmnet)
   ## Lasso
+  set.seed(666)
     x<- subset(training, select = c(-Li,-Lp,-id,-Pobre_1, -ing))
     y <- training$ing
     
-    modelo_lasso <- glmnet(
-      x,
+    modelo_lasso <-glmnet(
+      x = newxt,
       y,
       alpha = 1,
       nlambda = ,
-      standardize = FALSE
+      standardize = T
     )
-    
+   
     # Analicemos c?mo cambian los coeficientes para diferentes lambdas
     regularizacion <- modelo_lasso$beta %>% 
       as.matrix() %>%
@@ -478,38 +479,24 @@ prop.table(table(evaluating$Pobre))
       theme(legend.position="bottom")
     
     newx<-data.matrix(subset(evaluating, select = c(-Li,-Lp,-id,-Pobre_1,-ing)))
-    predicciones_lasso <- predict(modelo_lasso, 
-                                  newx )
-    lambdas_lasso <- modelo_lasso$lambda
-    
+  
     # Cada predicci?n se va a evaluar
-    y_test = evaluating$ing
-    resultados_lasso <- data.frame()
-    for (i in 1:length(lambdas_lasso)) {
-      l <- lambdas_lasso[i]
-      y_hat_out2 <- predicciones_lasso[, i]
-      r22 <- R2_Score(y_pred = y_hat_out2, y_true = evaluating$ing)
-      rmse2 <- RMSE(y_pred = y_hat_out2, y_true = evaluating$ing)
-      resultado <- data.frame(Modelo = "Lasso",
-                              Muestra = "Fuera",
-                              Lambda = l,
-                              R2_Score = r22, 
-                              RMSE = rmse2)
-      resultados_lasso <- bind_rows(resultados_lasso, resultado)
-    }
+    set.seed(666)
     
-    #Revisamos los posibles MSE
-    
-    ggplot(resultados_lasso, aes(x = Lambda, y = RMSE)) +
-      geom_point() +
-      geom_line() +
-      theme_bw() +
-      scale_y_continuous(labels = scales::comma)
-    
-    filtro <- resultados_lasso$RMSE == min(resultados_lasso$RMSE)
-    mejor_lambda_lasso <- resultados_lasso[filtro, "Lambda"]
+    newxt<-data.matrix(subset(training, select = c(-Li,-Lp,-id,-Pobre_1, -ing)))
+    modelo_lasso_cv <-cv.glmnet(
+      x = newxt,
+      y,
+      alpha = 1,
+      nlambda = ,
+      nfold = 10,
+      standardize = T
+    )
+    plot(modelo_lasso_cv)
+  
     
     # Guardamos el mejor Lasso
+    mejor_lambda_lasso = modelo_lasso_cv$lambda.min
     #predicción con la base de datos training
     newxt<-data.matrix(subset(training, select = c(-Li,-Lp,-id,-Pobre_1, -ing)))
     y_hat_in2 <- predict.glmnet(modelo_lasso,
@@ -530,15 +517,14 @@ prop.table(table(evaluating$Pobre))
     
     cm_lasso<-confusionMatrix(pobre_hat_lasso,Pobre_1)
     
+    cm_lasso
     
-    resultados<-data.frame(Modelo="Lasso",Base="Predicción",
+    resultados_l<-data.frame(Modelo="Lasso",Base="Predicción",
                            Accuracy=cm_lasso$overall[1],
                            Sensitivity=cm_lasso$byClass[1],
                            Specificity=cm_lasso$byClass[2])
     
-    
-    
-    resultados
+    resultados_l
   
   #Ridge 
   modelo_ridge <- glmnet(
@@ -546,7 +532,7 @@ prop.table(table(evaluating$Pobre))
     y ,
     alpha = 0,
     nlambda = ,
-    standardize = FALSE
+    standardize = T
   )
   
   # Analicemos cómo cambian los coeficientes para diferentes lambdas
@@ -562,7 +548,7 @@ prop.table(table(evaluating$Pobre))
       names_to = "predictor",
       values_to = "coeficientes"
     )
-  #Encontrar mejor lambda
+  
   regularizacion2 %>%
     ggplot(aes(x = lambda, y = coeficientes, color = predictor)) +
     geom_line() +
@@ -575,33 +561,32 @@ prop.table(table(evaluating$Pobre))
     theme_bw() +
     theme(legend.position="bottom")
   
-  predicciones_ridge <- predict(modelo_ridge, 
-                                newx)
-  lambdas_ridge <- modelo_ridge$lambda
+  #eavaluamos el mejor lambda
+  set.seed(666)
   
-  # Cada predicción se va a evaluar
-  resultados_ridge <- data.frame()
-  for (i in 1:length(lambdas_ridge)) {
-    l <- lambdas_ridge[i]
-    y_hat_out3 <- predicciones_ridge[, i]
-    r23 <- R2_Score(y_pred = y_hat_out3, y_true = evaluating$ing)
-    rmse3 <- RMSE(y_pred = y_hat_out3, y_true = evaluating$ing)
-    resultado <- data.frame(Modelo = "Ridge",
-                            Muestra = "Fuera",
-                            Lambda = l,
-                            R2_Score = r23, 
-                            RMSE = rmse3)
-    resultados_ridge <- bind_rows(resultados_ridge, resultado)
-  }
+  modelo_ridge_cv <-cv.glmnet(
+    x = newxt,
+    y,
+    alpha = 0,
+    nlambda = ,
+    nfold = 10,
+    standardize = T
+  )
+  plot(modelo_lasso_cv)
   
-  ggplot(resultados_ridge, aes(x = Lambda, y = RMSE)) +
-    geom_point() +
-    geom_line() +
-    theme_bw() +
-    scale_y_continuous(labels = scales::comma)
   
-  filtro <- resultados_ridge$RMSE == min(resultados_ridge$RMSE)
-  mejor_lambda_ridge <- resultados_ridge[filtro, "Lambda"]
+  # Guardamos el mejor Ridge
+  mejor_lambda_ridge = modelo_ridge_cv$lambda.min
+  #predicción con la base de datos training
+ 
+   y_hat_in2 <- predict.glmnet(modelo_ridge,
+                              newxt,
+                              s = mejor_lambda_ridge)
+  
+  #predicción con la base de datos test
+  y_hat_out2 <- predict.glmnet(modelo_ridge,
+                               newx,
+                               s = mejor_lambda_ridge)
   
   #evaluamos los resultados
   resultados_ridge_1 <-predict(modelo_ridge, newxt, s = mejor_lambda_ridge)
@@ -614,43 +599,73 @@ prop.table(table(evaluating$Pobre))
   pobre_hat_r<-factor(pobre_hat_r)
   Pobre_1<-factor(evaluating$Pobre_1)
   
-  cm_ridge<-confusionMatrix(evaluating$pobre_hat_r,evaluating$Pobre_1)
+  cm_ridge<-confusionMatrix(pobre_hat_r, Pobre_1)
   
   
-  resultados<-data.frame(Modelo="ridge",Base="Predicción",
+  resultados_r<-data.frame(Modelo="ridge",Base="Predicción",
                          Accuracy=cm_ridge$overall[1],
                          Sensitivity=cm_ridge$byClass[1],
                          Specificity=cm_ridge$byClass[2])
-  resultados
+  resultados_r
   
-  #Elastic net 
+  ##Elastic net 
+ 
+  
+  modelo_elastic <- glmnet(
+    x ,
+    y ,
+   alpha = 0.5,
+    nlambda = ,
+    standardize = T
+  )
+  
+  # Analicemos cómo cambian los coeficientes para diferentes lambdas
+  regularizacion3 <- modelo_elastic$beta %>% 
+    as.matrix() %>%
+    t() %>% 
+    as_tibble() %>%
+    mutate(lambda = modelo_elastic$lambda)
+  
+  regularizacion3 <- regularizacion3 %>%
+    pivot_longer(
+      cols = !lambda, 
+      names_to = "predictor",
+      values_to = "coeficientes"
+    )
+  
+  regularizacion3 %>%
+    ggplot(aes(x = lambda, y = coeficientes, color = predictor)) +
+    geom_line() +
+    scale_x_log10(
+      breaks = scales::trans_breaks("log10", function(x) 10^x),
+      labels = scales::trans_format("log10",
+                                    scales::math_format(10^.x))
+    ) +
+    labs(title = "Coeficientes del modelo en función de la regularización (elastic)", x = "Lambda", y = "Coeficientes") +
+    theme_bw() +
+    theme(legend.position="bottom")
+  
+  
+  
+  #obtener el lambda óptimo
   set.seed(666)
-  modelo_elastic<-cv.glmnet(
+  modelo_elastic_cv<-cv.glmnet(
     x=newxt,
     y,
-    lambda = NULL,
-    type.measure = c("default", "mse", "deviance", "class", "auc", "mae", "C"),
+    alpha = 0.5,
     nfolds = 10,
-    foldid = NULL,
-    alignment = c("lambda", "fraction"),
-    grouped = TRUE,
-    keep = FALSE,
-    parallel = FALSE,
-    gamma = c(0, 0.25, 0.5, 0.75, 1),
+    standardize = T
    
   )
   
-  plot(modelo_elastic)
-  coef(modelo_elastic)
+  plot(modelo_elastic_cv)
   
-  predicciones_elastic <- predict(modelo_elastic, 
-                                newx)
-  lambdas_elastic <- modelo_elastic$lambda
+  mejor_lambda_elastic = modelo_elastic_cv$lambda.min
   
   
-  resultados_elastic_1 <-predict(modelo_elastic, newxt, s = "lambda.min")
+  resultados_elastic_1 <-predict(modelo_elastic, newxt, s =  mejor_lambda_elastic)
 
-  resultados_elastic_2 <-predict(modelo_elastic, newx, s = "lambda.min")
+  resultados_elastic_2 <-predict(modelo_elastic, newx, s =  mejor_lambda_elastic)
   
   pobre_hat_elastic<-ifelse(resultados_elastic_2<evaluating$Lp,1,0)
   plot(pobre_hat_elastic)
@@ -661,11 +676,13 @@ prop.table(table(evaluating$Pobre))
   cm_elastic<-confusionMatrix(pobre_hat_elastic,Pobre_1)
   
   
-  resultados<-data.frame(Modelo="elastic net",Base="Predicción",
+  resultados_e<-data.frame(Modelo="elastic net",Base="Predicción",
                          Accuracy=cm_elastic$overall[1],
                          Sensitivity=cm_elastic$byClass[1],
                          Specificity=cm_elastic$byClass[2])
-  resultados
+  resultados_e
+  
+  
 #------------------------------------------------------------------------------
 
   #LM para ingreso
