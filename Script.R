@@ -546,8 +546,49 @@ prop.table(table(evaluating$Pobre))
   
   
   resultados
+  
+  #Elastic net 
+  set.seed(666)
+  modelo_elastic<-cv.glmnet(
+    x=newxt,
+    y,
+    lambda = NULL,
+    type.measure = c("default", "mse", "deviance", "class", "auc", "mae", "C"),
+    nfolds = 10,
+    foldid = NULL,
+    alignment = c("lambda", "fraction"),
+    grouped = TRUE,
+    keep = FALSE,
+    parallel = FALSE,
+    gamma = c(0, 0.25, 0.5, 0.75, 1),
+   
+  )
+  
+  plot(modelo_elastic)
+  coef(modelo_elastic)
+  
+  predicciones_elastic <- predict(modelo_elastic, 
+                                newx)
+  lambdas_elastic <- modelo_elastic$lambda
+  
+  
+  resultados_elastic_1 <-predict(modelo_elastic, newxt, s = "lambda.min")
 
-
+  resultados_elastic_2 <-predict(modelo_elastic, newx, s = "lambda.min")
+  
+  evaluating$pobre_hat_elastic<-ifelse(resultados_elastic_2<evaluating$Lp,1,0)
+  
+  evaluating$pobre_hat_elastic<-factor(evaluating$pobre_hat_elastic)
+  evaluating$Pobre_1<-factor(evaluating$Pobre_1)
+  
+  cm_elastic<-confusionMatrix(evaluating$pobre_hat_elastic,evaluating$Pobre_1)
+  
+  
+  resultados<-data.frame(Modelo="elastic",Base="Predicción",
+                         Accuracy=cm_elastic$overall[1],
+                         Sensitivity=cm_elastic$byClass[1],
+                         Specificity=cm_elastic$byClass[2])
+  resultados
 #------------------------------------------------------------------------------
 
   #LM para ingreso
