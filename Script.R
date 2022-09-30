@@ -447,7 +447,7 @@ prop.table(table(evaluating$Pobre))
     x,
     y,
     alpha = 1,
-    nlambda = 300,
+    nlambda = ,
     standardize = FALSE
   )
   
@@ -522,12 +522,13 @@ prop.table(table(evaluating$Pobre))
                                s = mejor_lambda_lasso)
   #Evaluamos
   
-  evaluating$pobre_hat_lasso<-ifelse(y_hat_out2<evaluating$Lp,1,0)
+  pobre_hat_lasso<-ifelse(y_hat_out2<evaluating$Lp,1,0)
+  plot(pobre_hat_lasso)
   
-  evaluating$pobre_hat_lasso<-factor(evaluating$pobre_hat_lasso)
-  evaluating$Pobre_1<-factor(evaluating$Pobre_1)
+  pobre_hat_lasso<-factor(pobre_hat_lasso)
+  Pobre_1<-factor(evaluating$Pobre_1)
   
-  cm_lasso<-confusionMatrix(evaluating$pobre_hat_lasso,evaluating$Pobre_1)
+  cm_lasso<-confusionMatrix(pobre_hat_lasso,Pobre_1)
   
   
   resultados<-data.frame(Modelo="Lasso",Base="Predicción",
@@ -537,6 +538,88 @@ prop.table(table(evaluating$Pobre))
   
   
   
+  resultados
+  
+  #Ridge 
+  modelo_ridge <- glmnet(
+    x ,
+    y ,
+    alpha = 0,
+    nlambda = ,
+    standardize = FALSE
+  )
+  
+  # Analicemos cómo cambian los coeficientes para diferentes lambdas
+  regularizacion2 <- modelo_ridge$beta %>% 
+    as.matrix() %>%
+    t() %>% 
+    as_tibble() %>%
+    mutate(lambda = modelo_ridge$lambda)
+  
+  regularizacion2 <- regularizacion2 %>%
+    pivot_longer(
+      cols = !lambda, 
+      names_to = "predictor",
+      values_to = "coeficientes"
+    )
+  #Encontrar mejor lambda
+  regularizacion2 %>%
+    ggplot(aes(x = lambda, y = coeficientes, color = predictor)) +
+    geom_line() +
+    scale_x_log10(
+      breaks = scales::trans_breaks("log10", function(x) 10^x),
+      labels = scales::trans_format("log10",
+                                    scales::math_format(10^.x))
+    ) +
+    labs(title = "Coeficientes del modelo en función de la regularización (Ridge)", x = "Lambda", y = "Coeficientes") +
+    theme_bw() +
+    theme(legend.position="bottom")
+  
+  predicciones_ridge <- predict(modelo_ridge, 
+                                newx)
+  lambdas_ridge <- modelo_ridge$lambda
+  
+  # Cada predicción se va a evaluar
+  resultados_ridge <- data.frame()
+  for (i in 1:length(lambdas_ridge)) {
+    l <- lambdas_ridge[i]
+    y_hat_out3 <- predicciones_ridge[, i]
+    r23 <- R2_Score(y_pred = y_hat_out3, y_true = evaluating$ing)
+    rmse3 <- RMSE(y_pred = y_hat_out3, y_true = evaluating$ing)
+    resultado <- data.frame(Modelo = "Ridge",
+                            Muestra = "Fuera",
+                            Lambda = l,
+                            R2_Score = r23, 
+                            RMSE = rmse3)
+    resultados_ridge <- bind_rows(resultados_ridge, resultado)
+  }
+  
+  ggplot(resultados_ridge, aes(x = Lambda, y = RMSE)) +
+    geom_point() +
+    geom_line() +
+    theme_bw() +
+    scale_y_continuous(labels = scales::comma)
+  
+  filtro <- resultados_ridge$RMSE == min(resultados_ridge$RMSE)
+  mejor_lambda_ridge <- resultados_ridge[filtro, "Lambda"]
+  
+  #evaluamos los resultados
+  resultados_ridge_1 <-predict(modelo_ridge, newxt, s = mejor_lambda_ridge)
+  
+  resultados_ridge_2 <-predict(modelo_ridge, newx, s = mejor_lambda_ridge)
+  
+  pobre_hat_r<-ifelse(resultados_ridge_2<evaluating$Lp,1,0)
+  
+  pobre_hat_r<-factor(pobre_hat_r)
+  Pobre_1<-factor(evaluating$Pobre_1)
+  
+  cm_ridge<-confusionMatrix(evaluating$pobre_hat_r,evaluating$Pobre_1)
+  
+  
+  resultados<-data.frame(Modelo="ridge",Base="Predicción",
+                         Accuracy=cm_ridge$overall[1],
+                         Sensitivity=cm_ridge$byClass[1],
+                         Specificity=cm_ridge$byClass[2])
   resultados
   
   #Elastic net 
@@ -576,7 +659,7 @@ prop.table(table(evaluating$Pobre))
   cm_elastic<-confusionMatrix(evaluating$pobre_hat_elastic,evaluating$Pobre_1)
   
   
-  resultados<-data.frame(Modelo="elastic_net",Base="Predicción",
+  resultados<-data.frame(Modelo="elastic net",Base="Predicción",
                          Accuracy=cm_elastic$overall[1],
                          Sensitivity=cm_elastic$byClass[1],
                          Specificity=cm_elastic$byClass[2])
@@ -973,7 +1056,7 @@ metricas_evaluating <- data.frame(Modelo = "Logit",
                                   "FNR" = FNR_evaluating)
 
 
-#-------------------------------------------------------------------------------
+
 #-------------------------------------------------------------------------------
 
 metricas <- bind_rows(metricas_training_r1, metricas_training_r2, metricas_evaluating_r1, metricas_evaluating_r2)
@@ -982,22 +1065,18 @@ metricas %>%
   kable_styling(full_width = T)
 
 
-#-------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------
 
 
 
 
-#===============================================================================
+
+
+
 
 
 
 
 #------------------------------------------------------------------------------
-
-# Random Forest (Mateo)
-
-
 
 
 #LM para ingreso
@@ -1008,35 +1087,29 @@ train_pred<-subset(training,select=c(-id,-Li,-Lp,-Pobre_1))
 reg_lin<-lm(ing~.,data=train_pred)
 
 
-summary(reg_lin)
-
 #Modelo fuera de muestra
 
-evaluating$ing_hat<-predict(reg_lin,subset(evaluating,select=c(-id,-Li,-Lp,-Pobre_1,-ing)))
+evaluating$ing_hat<-predict(reg_lin,subset(evaluating,select=c(-id,-Li,-Lp,-Pobre_1)))
 
 
+eval_lm<-subset(evaluating,select=c(-id,-Li,-Lp,-Pobre_1 ,-ing))
+
+evaluating$ing_hat<-predict(reg_lin,eval_lm)
 
 
-"hola"
-summary(reg_lin)
-
-#Modelo fuera de muestra
-evaluating$ing_hat<-predict(reg_lin,evaluating)
 
 evaluating$pobre_hat<-ifelse(evaluating$ing_hat<evaluating$Lp,1,0)
 
 evaluating$pobre_hat<-factor(evaluating$pobre_hat)
 evaluating$Pobre_1<-factor(evaluating$Pobre_1)
 
-cm<-confusionMatrix(evaluating$pobre_hat,evaluating$Pobre_1,p=)
+cm<-confusionMatrix(evaluating$pobre_hat,evaluating$Pobre_1)
 
 
 resultados<-data.frame(Modelo="LM",Base="Predicción",
                        Accuracy=cm$overall[1],
                        Sensitivity=cm$byClass[1],
                        Specificity=cm$byClass[2])
-  
-
 
 resultados
 
@@ -1077,44 +1150,88 @@ resultados_general
 
 
 
-#------------------------------------------------------------------------------
-
-  # Random Forest para clasificación
-
-install.packages("randomForest")
-library("randomForest")
-
-
-
-control<-trainControl(method="repeatedcv",number=3,repeats = 3,
-                      summaryFunction = twoClassSummary,search = "random")
-training$Pobre_1<-as.factor(training$Pobre_1)
-metric<-"Sensitivity"
-mtry<-sqrt(ncol(training))
-
-rf_clas<-train(Pobre_1~.,data=subset(training,select=c(-id,-Li,-Lp,-ing)),method="rf",
-               metric=metric,tuneLength=15,trControl=control)
-
-
 
 #------------------------------------------------------------------------------
 
-  # Random Forest para predicción de ingreso
+  # XGBoost para Clasificación
+
+p_load("ranger",install=T)
 
 
-#Base para predicción
+tr_m<-subset(training,select=c(-id,-Li,-Lp,-ing))
+ev_m<-subset(evaluating,select=c(-id,-Li,-Lp,-ing))
 
-rf_pred<-train(ing~.,data=subset(training,select=c(-id,-Li,-Lp,-Pobre_1)),method="rf",
-               metric=metric,tuneLength=15,trControl=control)
+tr_m$Pobre_1<-as.factor(tr_m$Pobre_1)
+ev_m$Pobre_1<-as.factor(ev_m$Pobre_1)
+
+  #RF
+grid_default <- expand.grid(nrounds = c(100,200),
+                            max_depth = c(4,6,8),
+                            eta = c(0.01,0.1,0.5),
+                            gamma = c(0,1),
+                            min_child_weight = c(10,50),
+                            colsample_bytree = c(0.7),
+                            subsample = c(0.6))
+
+fiveStats <- function(...) c(twoClassSummary(...), defaultSummary(...))
+
+ctrl<- trainControl(method = "cv",
+                            number = 2,
+                            summaryFunction = fiveStats,
+                            verbose=T)
+
+
+xgtree <- train(Pobre_1~.,data=tr_m,method="xgbTree",trControl=ctrl,metric="Sens",
+                tuneGrid=grid_default)
+
+
+
+ev_m$pred_arbol <-predict(xgtree,newdata=ev_m)
+
+cm_xg <- confusionMatrix(ev_m$pred_arbol,ev_m$Pobre_1)
+
+
+resultados_xg<-data.frame(Modelo="XGBoost",Base="Clasificación",
+                        Accuracy=cm_xg$overall[1],
+                        Sensitivity=cm_xg$byClass[1],
+                        Specificity=cm_xg$byClass[2])
+
+resultados_xg
+
+
+
+
 
 
 #------------------------------------------------------------------------------
+  #Logit con todas las variables
+
+train_clas<-subset(training,select=c(-id,-Li,-Lp,-ing))
+eval_<-subset(evaluating,select=c(-id,-Li,-Lp))
 
 
 
+train_clas$Pobre_1<-as.factor(train_clas$Pobre_1)
+
+log_todo<-glm(Pobre_1~. , family=binomial(link="logit") , data=train_clas)
+
+evaluating$pobre_logit_hat_todo<-predict(log_todo,eval_)
 
 
+evaluating$pobre_logit_hat_todo<-factor(evaluating$pobre_logit_hat_todo)
+evaluating$Pobre_1<-factor(evaluating$Pobre_1)
+
+cm<-confusionMatrix(evaluating$pobre_logit_hat_todo,evaluating$Pobre_1)
 
 
+resultados3<-data.frame(Modelo="Logit_entero",Base="Clasificación",
+                       Accuracy=cm$overall[1],
+                       Sensitivity=cm$byClass[1],
+                       Specificity=cm$byClass[2])
+
+resultados3
+
+resultados_general<-rbind(resultados,resultados2,resultados3)
+resultados_general
 
 
