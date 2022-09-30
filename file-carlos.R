@@ -702,7 +702,57 @@ metricas1 %>%
 
 ## Linear discriminant analysis
 
+library(MASS)
+# Fit the model
+model <- lda(Species~., data = train.transformed)
+# Make predictions
+predictions <- model %>% predict(test.transformed)
+# Model accuracy
+mean(predictions$class==test.transformed$Species)
 
+library(MASS)
+model <- lda(Species~., data = train.transformed)
+model
+
+plot(model)
+
+predictions <- model %>% predict(test.transformed)
+names(predictions)
+
+# Predicted classes
+head(predictions$class, 6)
+# Predicted probabilities of class memebership.
+head(predictions$posterior, 6) 
+# Linear discriminants
+head(predictions$x, 3) 
+
+lda.data <- cbind(train.transformed, predict(model)$x)
+ggplot(lda.data, aes(LD1, LD2)) +
+  geom_point(aes(color = Species))
+
+
+## QDA
+
+library(MASS)
+# Fit the model
+model <- qda(Species~., data = train.transformed)
+model
+# Make predictions
+predictions <- model %>% predict(test.transformed)
+# Model accuracy
+mean(predictions$class == test.transformed$Species)
+
+
+## MDA
+
+library(mda)
+# Fit the model
+model <- mda(Species~., data = train.transformed)
+model
+# Make predictions
+predicted.classes <- model %>% predict(test.transformed)
+# Model accuracy
+mean(predicted.classes == test.transformed$Species)
 
 
 
