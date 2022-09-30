@@ -437,7 +437,6 @@ prop.table(table(evaluating$Pobre))
 
 # Implementación de modelos
 
-  #Elastic net Federico
   #install.packages("glmnet")
   library(glmnet)
   ## Lasso
@@ -502,13 +501,6 @@ prop.table(table(evaluating$Pobre))
   #Revisamos los posibles MSE
   
   ggplot(resultados_lasso, aes(x = Lambda, y = RMSE)) +
-    geom_point() +
-    geom_line() +
-    theme_bw() +
-    scale_y_continuous(labels = scales::comma)
-  
-  #Revisamos los posibles R2
-  ggplot(resultados_lasso, aes(x = Lambda, y = R2_Score)) +
     geom_point() +
     geom_line() +
     theme_bw() +
@@ -584,7 +576,7 @@ prop.table(table(evaluating$Pobre))
   cm_elastic<-confusionMatrix(evaluating$pobre_hat_elastic,evaluating$Pobre_1)
   
   
-  resultados<-data.frame(Modelo="elastic",Base="Predicción",
+  resultados<-data.frame(Modelo="elastic_net",Base="Predicción",
                          Accuracy=cm_elastic$overall[1],
                          Sensitivity=cm_elastic$byClass[1],
                          Specificity=cm_elastic$byClass[2])
