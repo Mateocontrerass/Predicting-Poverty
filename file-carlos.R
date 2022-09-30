@@ -5,7 +5,7 @@ cat("\f")
 require(pacman)
 p_load(tidyverse,dplyr,here,skimr,tidyr,gamlr,modelsummary,caret,
        rio,knitr, kableExtra, rstudioapi,tidymodels,janitor,MLmetrics,
-       rattle,doParallel, ROCR, themis, install = TRUE)
+       rattle,doParallel, ROCR, themis, MASS, install = TRUE)
 
 set.seed(666)
 
@@ -30,12 +30,12 @@ variables_numericas <- c("P6040", "P6426", "P5000",
                          "P5010", "P5130", "Nper", "Npersug")
 escalador <- preProcess(training[, variables_numericas])
 train_s <- training
-test_s <- evaluating
+evaluate_s <- evaluating
 train_s[, variables_numericas] <- predict(escalador, training[, variables_numericas])
-test_s[, variables_numericas] <- predict(escalador, evaluating[, variables_numericas])
+evaluate_s[, variables_numericas] <- predict(escalador, evaluating[, variables_numericas])
 
 training <- train_s
-evaluating <- test_s
+evaluating <- evaluate_s
 
 rm(escalador, train_s, test_s)
 
