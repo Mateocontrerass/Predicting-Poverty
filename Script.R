@@ -998,7 +998,7 @@ evaluating$pobre_hat<-ifelse(evaluating$ing_hat<evaluating$Lp,1,0)
 evaluating$pobre_hat<-factor(evaluating$pobre_hat)
 evaluating$Pobre_1<-factor(evaluating$Pobre_1)
 
-cm<-confusionMatrix(evaluating$pobre_hat,evaluating$Pobre_1,p=)
+cm<-confusionMatrix(evaluating$pobre_hat,evaluating$Pobre_1)
 
 
 resultados<-data.frame(Modelo="LM",Base="Predicción",
@@ -1072,10 +1072,7 @@ rf_clas<-train(Pobre_1~.,data=subset(training,select=c(-id,-Li,-Lp,-ing)),method
   # Random Forest para predicción de ingreso
 
 
-#Base para predicción
 
-rf_pred<-train(ing~.,data=subset(training,select=c(-id,-Li,-Lp,-Pobre_1)),method="rf",
-               metric=metric,tuneLength=15,trControl=control)
 
 
 #------------------------------------------------------------------------------
