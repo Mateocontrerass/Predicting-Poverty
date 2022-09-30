@@ -470,7 +470,7 @@ prop.table(table(train_undersampling$Pobre_1))
 
 a <- nrow(training)
 b <- nrow(train_undersampling)
-b-a ## se crearon 188665 obsesrvaciones nuevas
+a-b ## se eliminaron 188665 obsesrvaciones nuevas
 
 
 colnames(train_undersampling)
@@ -589,11 +589,43 @@ metricas_undersampling_evaluate <- data.frame(Modelo = "Logit - correcion imbala
                                              "FNR" = FNR_undersampling_evaluate)
 
 
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+
+## Remuestreo - Umbral de decisión optimo
+
+# Esto no se debería hacer sobre la base de testeo pero se hace solo a modo ilustrativo
+
+prubea <- seq(0.1, 0.9, length.out = 100)
+opt_t <- data.frame()
+for (t in thresholds) {
+  y_pred_t <- as.numeric(Pobre_1_logit_evaluating > t)
+  f1_t <- F1_Score(y_true = test$infielTRUE, y_pred = y_pred_t,
+                   positive = 1)
+  fila <- data.frame(t = t, F1 = f1_t)
+  opt_t <- bind_rows(opt_t, fila)
+}
+
+mejor_t <-  opt_t$t[which(opt_t$F1 == max(opt_t$F1, na.rm = T))]
+
+ggplot(opt_t, aes(x = t, y = F1)) +
+  geom_point(size = 0.7) +
+  geom_line() +
+  theme_bw() +
+  geom_vline(xintercept = mejor_t, linetype = "dashed", 
+             color = "red") +
+  labs(x = "Threshold")
+
+
 
 
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
+
+## SMOTE, Tuning model (hiperparametros), lasso
+
+# Tabla de metricas
 
 metricas <- bind_rows(metricas_training_r1, metricas_evaluating_r1, metricas_training_r2,
                       metricas_evaluating_r2, metricas_oversampling, metricas_oversampling_evaluate,
@@ -608,10 +640,13 @@ metricas %>%
 #-------------------------------------------------------------------------------
 
 
-
-
-
 ## Linear discriminant analysis
+
+
+
+
+
+
 
 
 
