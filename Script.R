@@ -973,7 +973,7 @@ metricas_evaluating <- data.frame(Modelo = "Logit",
                                   "FNR" = FNR_evaluating)
 
 
-#-------------------------------------------------------------------------------
+
 #-------------------------------------------------------------------------------
 
 metricas <- bind_rows(metricas_training_r1, metricas_training_r2, metricas_evaluating_r1, metricas_evaluating_r2)
@@ -982,19 +982,18 @@ metricas %>%
   kable_styling(full_width = T)
 
 
-#-------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------
 
 
 
 
-#===============================================================================
+
+
+
 
 
 
 
 #------------------------------------------------------------------------------
-
 
 
 #LM para ingreso
@@ -1010,6 +1009,11 @@ reg_lin<-lm(ing~.,data=train_pred)
 evaluating$ing_hat<-predict(reg_lin,subset(evaluating,select=c(-id,-Li,-Lp,-Pobre_1)))
 
 
+eval_lm<-subset(evaluating,select=c(-id,-Li,-Lp,-Pobre_1 ,-ing))
+
+evaluating$ing_hat<-predict(reg_lin,eval_lm)
+
+
 
 evaluating$pobre_hat<-ifelse(evaluating$ing_hat<evaluating$Lp,1,0)
 
@@ -1023,8 +1027,6 @@ resultados<-data.frame(Modelo="LM",Base="Predicción",
                        Accuracy=cm$overall[1],
                        Sensitivity=cm$byClass[1],
                        Specificity=cm$byClass[2])
-  
-
 
 resultados
 
@@ -1065,27 +1067,10 @@ resultados_general
 
 
 
-#------------------------------------------------------------------------------
-
-  # Random Forest para clasificación
-
-install.packages("randomForest")
-library("randomForest")
-
-
-
-control<-trainControl(method="repeatedcv",number=3,repeats = 3,
-                      summaryFunction = twoClassSummary,search = "random")
-training$Pobre_1<-as.factor(training$Pobre_1)
-metric<-"Sensitivity"
-mtry<-sqrt(ncol(training))
-
-rf_clas<-train(Pobre_1~.,data=subset(training,select=c(-id,-Li,-Lp,-ing)),method="rf",
-               metric=metric,tuneLength=15,trControl=control)
-
-
 
 #------------------------------------------------------------------------------
+
+  # XGBoost para Clasificación
 
 p_load("ranger",install=T)
 
@@ -1136,12 +1121,34 @@ resultados_xg
 
 
 #------------------------------------------------------------------------------
+  #Logit con todas las variables
+
+train_clas<-subset(training,select=c(-id,-Li,-Lp,-ing))
+eval_<-subset(evaluating,select=c(-id,-Li,-Lp))
 
 
 
+train_clas$Pobre_1<-as.factor(train_clas$Pobre_1)
+
+log_todo<-glm(Pobre_1~. , family=binomial(link="logit") , data=train_clas)
+
+evaluating$pobre_logit_hat_todo<-predict(log_todo,eval_)
 
 
+evaluating$pobre_logit_hat_todo<-factor(evaluating$pobre_logit_hat_todo)
+evaluating$Pobre_1<-factor(evaluating$Pobre_1)
+
+cm<-confusionMatrix(evaluating$pobre_logit_hat_todo,evaluating$Pobre_1)
 
 
+resultados3<-data.frame(Modelo="Logit_entero",Base="Clasificación",
+                       Accuracy=cm$overall[1],
+                       Sensitivity=cm$byClass[1],
+                       Specificity=cm$byClass[2])
+
+resultados3
+
+resultados_general<-rbind(resultados,resultados2,resultados3)
+resultados_general
 
 
