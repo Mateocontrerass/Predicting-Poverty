@@ -423,12 +423,10 @@ regla1 <- 0.5 # Se define regla de Bayes
 
 Pobre_1_hat_oversamping_evaluate <- ifelse(Pobre_1_logit_oversampling_evaluate>regla1,1,0) ## Prediccion de Pobre_1za
 
-cm_logit_oversampling_evaluate <- confusionMatrix(data = factor(Pobre_1_logit_oversampling_evaluate),
+cm_logit_oversampling_evaluate <- confusionMatrix(data = factor(Pobre_1_hat_oversamping_evaluate),
                                                   reference = factor(evaluating$Pobre_1),
                                                   mode = "sens_spec", positive = "1")
 
-factor(Pobre_1_hat_oversamping_evaluate)
-factor(evaluating$Pobre_1)
 
 cm_logit_oversampling_evaluate <- cm_logit_oversampling_evaluate$table
 
