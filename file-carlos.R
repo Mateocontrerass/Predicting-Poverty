@@ -7,6 +7,8 @@ p_load(tidyverse,dplyr,here,skimr,tidyr,gamlr,modelsummary,caret,
        rio,knitr, kableExtra, rstudioapi,tidymodels,janitor,MLmetrics,
        rattle,doParallel, ROCR, themis, install = TRUE)
 
+set.seed(666)
+
 ## Carlos
 
 #-------------------------------------------------------------------------------
@@ -17,25 +19,25 @@ p_load(tidyverse,dplyr,here,skimr,tidyr,gamlr,modelsummary,caret,
 
 ### train
 
-## Depurar base
-
-set.seed(666)
-
 training <- data_rf_train
 rm(data_rf_train)
 
-colnames(training)
+skim(training)
 
-sub_set_training <- subset (training, select = -c(id, Li, Lp, ing, Npersug, P5010, P6050_3,
-                                                  P6050_4, P6050_5, P6050_6, P6050_7, 
-                                                  P6050_8, P6050_9, P6426, P5130,
-                                                  P6210s1_0, P6210s1_1, P6210s1_10, P6210s1_11,
-                                                  P6210s1_12, P6210s1_13, P6210s1_14, P6210s1_15,
-                                                  P6210s1_2, P6210s1_4, P6210s1_5, P6210s1_6, P6210s1_7,
-                                                  P6210s1_8, P6210s1_9, P6210s1_99, P7505_1))
+  training <- subset(training, select = -c(id, Li, Lp, ing))
 
-training <- subset(training, select = -c(id, Li, Lp, ing))
+variables_numericas <- c("P6040", "P6426", "P5000",
+                         "P5010", "P5130", "Nper", "Npersug")
+escalador <- preProcess(training[, variables_numericas])
+train_s <- training
+test_s <- evaluating
+train_s[, variables_numericas] <- predict(escalador, training[, variables_numericas])
+test_s[, variables_numericas] <- predict(escalador, evaluating[, variables_numericas])
 
+training <- train_s
+evaluating <- test_s
+
+rm(escalador, train_s, test_s)
 
 ## Modelo
 
@@ -186,13 +188,6 @@ skim(evaluating)
 
 colnames(evaluating)
 
-sub_set_evaluating <- subset (evaluating, select = -c(id, Li, Lp, ing, Npersug, P5010, P6050_3,
-                                                      P6050_4, P6050_5, P6050_6, P6050_7, 
-                                                      P6050_8, P6050_9, P6426, P5130,
-                                                      P6210s1_0, P6210s1_1, P6210s1_10, P6210s1_11,
-                                                      P6210s1_12, P6210s1_13, P6210s1_14, P6210s1_15,
-                                                      P6210s1_2, P6210s1_4, P6210s1_5, P6210s1_6, P6210s1_7,
-                                                      P6210s1_8, P6210s1_9, P6210s1_99, P7505_1))
 
 evaluating <- subset(evaluating, select = -c(id, Li, Lp, ing))
 
@@ -318,7 +313,7 @@ metricas_evaluating_r2 <- data.frame(Modelo = "Logit - Gráfica",
 
 ### Metodos para solución de imbalance
 
-## Remuestreo - Oversampling
+## Remuestreo - SMOTE
 
 library(themis)
 
@@ -355,7 +350,7 @@ ggplot(data=train_oversampling , mapping=aes(Pobre_1,Pobre_1_logit_oversampling)
 
 regla1 <- 0.5 # Se define regla de Bayes
 
-Pobre_1_hat_oversamping <- ifelse(Pobre_1_logit_oversampling>regla1,1,0) ## Prediccion de Pobreza
+Pobre_1_hat_oversampling <- ifelse(Pobre_1_logit_oversampling>regla1,1,0) ## Prediccion de Pobreza
 
 
 ggplot(train_oversampling, aes(x = Pobre_1)) +
@@ -365,14 +360,14 @@ ggplot(train_oversampling, aes(x = Pobre_1)) +
        x = "",
        y = "Distribución")
 
-ggplot(train_oversampling, aes(x = Pobre_1_hat_oversamping)) +
+ggplot(train_oversampling, aes(x = Pobre_1_hat_oversampling)) +
   geom_bar(fill = "darkblue") +
   theme_bw() +
   labs(title = "¿Es la persona Pobre_1? - Predicción",
        x = "",
        y = "Distribución")
 
-cm_logit_oversampling <- confusionMatrix(data = factor(Pobre_1_hat_oversamping),
+cm_logit_oversampling <- confusionMatrix(data = factor(Pobre_1_hat_oversampling),
                                          reference = factor(train_oversampling$Pobre_1),
                                          mode = "sens_spec", positive = "1")
 
@@ -381,16 +376,16 @@ cm_logit_oversampling <- cm_logit_oversampling$table
 skim(train_oversampling$Pobre_1)
 
 
-acc_oversampling <- Accuracy(y_pred = Pobre_1_hat_oversamping, y_true = train_oversampling$Pobre_1)
-pre_oversampling <- Precision(y_pred = Pobre_1_hat_oversamping, y_true = train_oversampling$Pobre_1, positive = 1)
-rec_oversampling <- Recall(y_pred = Pobre_1_hat_oversamping, y_true = train_oversampling$Pobre_1, positive = 1)
-f1_oversampling <- F1_Score(y_pred = Pobre_1_hat_oversamping, y_true = train_oversampling$Pobre_1, positive = 1)
-spf_oversampling <- Specificity(y_pred = Pobre_1_hat_oversamping, y_true = train_oversampling$Pobre_1, positive = 1)
+acc_oversampling <- Accuracy(y_pred = Pobre_1_hat_oversampling, y_true = train_oversampling$Pobre_1)
+pre_oversampling <- Precision(y_pred = Pobre_1_hat_oversampling, y_true = train_oversampling$Pobre_1, positive = 1)
+rec_oversampling <- Recall(y_pred = Pobre_1_hat_oversampling, y_true = train_oversampling$Pobre_1, positive = 1)
+f1_oversampling <- F1_Score(y_pred = Pobre_1_hat_oversampling, y_true = train_oversampling$Pobre_1, positive = 1)
+spf_oversampling <- Specificity(y_pred = Pobre_1_hat_oversampling, y_true = train_oversampling$Pobre_1, positive = 1)
 FPR_oversampling <- cm_logit_oversampling[2,1]/sum(cm_logit_oversampling[2,])
 FNR_oversampling <- cm_logit_oversampling[1,2]/sum(cm_logit_oversampling[1,])
 
 metricas_oversampling <- data.frame(Modelo = "Logit - correccion de imbalance",
-                                     "Muestreo" = "Oversampling", 
+                                     "Muestreo" = "SMOTE", 
                                      "Evaluación" = "Dentro de muestra",
                                      "Accuracy" = acc_oversampling,
                                      "Precision" = pre_oversampling,
@@ -402,7 +397,7 @@ metricas_oversampling <- data.frame(Modelo = "Logit - correccion de imbalance",
 
 ## Curva de ROC
 
-predicciones_oversampling <- prediction(Pobre_1_hat_oversamping, train_oversampling$Pobre_1)
+predicciones_oversampling <- prediction(Pobre_1_hat_oversampling, train_oversampling$Pobre_1)
 ROC_oversampling <- performance(predicciones_oversampling,"tpr","fpr")
 plot(ROC_oversampling, main = "ROC curve", col="red")
 abline(a = 0, b = 1)
@@ -421,9 +416,9 @@ Pobre_1_logit_oversampling_evaluate <- predict(logit_oversampling,
 
 regla1 <- 0.5 # Se define regla de Bayes
 
-Pobre_1_hat_oversamping_evaluate <- ifelse(Pobre_1_logit_oversampling_evaluate>regla1,1,0) ## Prediccion de Pobre_1za
+Pobre_1_hat_oversampling_evaluate <- ifelse(Pobre_1_logit_oversampling_evaluate>regla1,1,0) ## Prediccion de Pobre_1za
 
-cm_logit_oversampling_evaluate <- confusionMatrix(data = factor(Pobre_1_hat_oversamping_evaluate),
+cm_logit_oversampling_evaluate <- confusionMatrix(data = factor(Pobre_1_hat_oversampling_evaluate),
                                                   reference = factor(evaluating$Pobre_1),
                                                   mode = "sens_spec", positive = "1")
 
@@ -432,16 +427,16 @@ cm_logit_oversampling_evaluate <- cm_logit_oversampling_evaluate$table
 skim(evaluating$Pobre_1)
 
 
-acc_oversampling_evaluate <- Accuracy(y_pred = Pobre_1_hat_oversamping_evaluate, y_true = evaluating$Pobre_1)
-pre_oversampling_evaluate <- Precision(y_pred = Pobre_1_hat_oversamping_evaluate, y_true = evaluating$Pobre_1, positive = 1)
-rec_oversampling_evaluate <- Recall(y_pred = Pobre_1_hat_oversamping_evaluate, y_true = evaluating$Pobre_1, positive = 1)
-f1_oversampling_evaluate <- F1_Score(y_pred = Pobre_1_hat_oversamping_evaluate, y_true = evaluating$Pobre_1, positive = 1)
-spf_oversampling_evaluate <- Specificity(y_pred = Pobre_1_hat_oversamping_evaluate, y_true = evaluating$Pobre_1, positive = 1)
+acc_oversampling_evaluate <- Accuracy(y_pred = Pobre_1_hat_oversampling_evaluate, y_true = evaluating$Pobre_1)
+pre_oversampling_evaluate <- Precision(y_pred = Pobre_1_hat_oversampling_evaluate, y_true = evaluating$Pobre_1, positive = 1)
+rec_oversampling_evaluate <- Recall(y_pred = Pobre_1_hat_oversampling_evaluate, y_true = evaluating$Pobre_1, positive = 1)
+f1_oversampling_evaluate <- F1_Score(y_pred = Pobre_1_hat_oversampling_evaluate, y_true = evaluating$Pobre_1, positive = 1)
+spf_oversampling_evaluate <- Specificity(y_pred = Pobre_1_hat_oversampling_evaluate, y_true = evaluating$Pobre_1, positive = 1)
 FPR_oversampling_evaluate <- cm_logit_oversampling_evaluate[2,1]/sum(cm_logit_oversampling_evaluate[2,])
 FNR_oversampling_evaluate <- cm_logit_oversampling_evaluate[1,2]/sum(cm_logit_oversampling_evaluate[1,])
 
 metricas_oversampling_evaluate <- data.frame(Modelo = "Logit - correcion imbalance",
-                                            "Muestreo" = "Oversampling", 
+                                            "Muestreo" = "SMOTE", 
                                             "Evaluación" = "Fuera de muestra",
                                             "Accuracy" = acc_oversampling_evaluate,
                                             "Precision" = pre_oversampling_evaluate,
@@ -476,14 +471,14 @@ a-b ## se eliminaron 188665 obsesrvaciones nuevas
 colnames(train_undersampling)
 
 logit_undersampling <- glm(Pobre_1 ~.,
-                          data = train_undersampling, family = binomial(link="logit")) ## Estimar modelo logit en evaluate
+                           data = train_undersampling, family = binomial(link="logit")) ## Estimar modelo logit en evaluate
 
 tidy(logit_undersampling)
 summary(logit_undersampling)
 
 Pobre_1_logit_undersampling <- predict(logit_undersampling,
-                                      newdata = train_undersampling,
-                                      type = "response") # Estimación de predicciones de Pobre_1za
+                                       newdata = train_undersampling,
+                                       type = "response") # Estimación de predicciones de Pobre_1za
 summary(Pobre_1_logit_undersampling)
 
 ggplot(data=train_undersampling , mapping=aes(Pobre_1,Pobre_1_logit_undersampling)) + 
@@ -492,7 +487,7 @@ ggplot(data=train_undersampling , mapping=aes(Pobre_1,Pobre_1_logit_undersamplin
 
 regla1 <- 0.5 # Se define regla de Bayes
 
-Pobre_1_hat_oversamping <- ifelse(Pobre_1_logit_undersampling>regla1,1,0) ## Prediccion de Pobreza
+Pobre_1_hat_undersampling <- ifelse(Pobre_1_logit_undersampling>regla1,1,0) ## Prediccion de Pobreza
 
 
 ggplot(train_undersampling, aes(x = Pobre_1)) +
@@ -502,14 +497,14 @@ ggplot(train_undersampling, aes(x = Pobre_1)) +
        x = "",
        y = "Distribución")
 
-ggplot(train_undersampling, aes(x = Pobre_1_hat_oversamping)) +
+ggplot(train_undersampling, aes(x = Pobre_1_hat_undersampling)) +
   geom_bar(fill = "darkblue") +
   theme_bw() +
   labs(title = "¿Es la persona Pobre_1? - Predicción",
        x = "",
        y = "Distribución")
 
-cm_logit_undersampling <- confusionMatrix(data = factor(Pobre_1_hat_oversamping),
+cm_logit_undersampling <- confusionMatrix(data = factor(Pobre_1_hat_undersampling),
                                          reference = factor(train_undersampling$Pobre_1),
                                          mode = "sens_spec", positive = "1")
 
@@ -518,11 +513,11 @@ cm_logit_undersampling <- cm_logit_undersampling$table
 skim(train_undersampling$Pobre_1)
 
 
-acc_undersampling <- Accuracy(y_pred = Pobre_1_hat_oversamping, y_true = train_undersampling$Pobre_1)
-pre_undersampling <- Precision(y_pred = Pobre_1_hat_oversamping, y_true = train_undersampling$Pobre_1, positive = 1)
-rec_undersampling <- Recall(y_pred = Pobre_1_hat_oversamping, y_true = train_undersampling$Pobre_1, positive = 1)
-f1_undersampling <- F1_Score(y_pred = Pobre_1_hat_oversamping, y_true = train_undersampling$Pobre_1, positive = 1)
-spf_undersampling <- Specificity(y_pred = Pobre_1_hat_oversamping, y_true = train_undersampling$Pobre_1, positive = 1)
+acc_undersampling <- Accuracy(y_pred = Pobre_1_hat_undersampling, y_true = train_undersampling$Pobre_1)
+pre_undersampling <- Precision(y_pred = Pobre_1_hat_undersampling, y_true = train_undersampling$Pobre_1, positive = 1)
+rec_undersampling <- Recall(y_pred = Pobre_1_hat_undersampling, y_true = train_undersampling$Pobre_1, positive = 1)
+f1_undersampling <- F1_Score(y_pred = Pobre_1_hat_undersampling, y_true = train_undersampling$Pobre_1, positive = 1)
+spf_undersampling <- Specificity(y_pred = Pobre_1_hat_undersampling, y_true = train_undersampling$Pobre_1, positive = 1)
 FPR_undersampling <- cm_logit_undersampling[2,1]/sum(cm_logit_undersampling[2,])
 FNR_undersampling <- cm_logit_undersampling[1,2]/sum(cm_logit_undersampling[1,])
 
@@ -539,7 +534,7 @@ metricas_undersampling <- data.frame(Modelo = "Logit - correccion de imbalance",
 
 ## Curva de ROC
 
-predicciones_undersampling <- prediction(Pobre_1_hat_oversamping, train_undersampling$Pobre_1)
+predicciones_undersampling <- prediction(Pobre_1_hat_undersampling, train_undersampling$Pobre_1)
 ROC_undersampling <- performance(predicciones_undersampling,"tpr","fpr")
 plot(ROC_undersampling, main = "ROC curve", col="red")
 abline(a = 0, b = 1)
@@ -558,9 +553,9 @@ Pobre_1_logit_undersampling_evaluate <- predict(logit_undersampling,
 
 regla1 <- 0.5 # Se define regla de Bayes
 
-Pobre_1_hat_oversamping_evaluate <- ifelse(Pobre_1_logit_undersampling_evaluate>regla1,1,0) ## Prediccion de Pobre_1za
+Pobre_1_hat_undersampling_evaluate <- ifelse(Pobre_1_logit_undersampling_evaluate>regla1,1,0) ## Prediccion de Pobre_1za
 
-cm_logit_undersampling_evaluate <- confusionMatrix(data = factor(Pobre_1_hat_oversamping_evaluate),
+cm_logit_undersampling_evaluate <- confusionMatrix(data = factor(Pobre_1_hat_undersampling_evaluate),
                                                   reference = factor(evaluating$Pobre_1),
                                                   mode = "sens_spec", positive = "1")
 
@@ -569,11 +564,11 @@ cm_logit_undersampling_evaluate <- cm_logit_undersampling_evaluate$table
 skim(evaluating$Pobre_1)
 
 
-acc_undersampling_evaluate <- Accuracy(y_pred = Pobre_1_hat_oversamping_evaluate, y_true = evaluating$Pobre_1)
-pre_undersampling_evaluate <- Precision(y_pred = Pobre_1_hat_oversamping_evaluate, y_true = evaluating$Pobre_1, positive = 1)
-rec_undersampling_evaluate <- Recall(y_pred = Pobre_1_hat_oversamping_evaluate, y_true = evaluating$Pobre_1, positive = 1)
-f1_undersampling_evaluate <- F1_Score(y_pred = Pobre_1_hat_oversamping_evaluate, y_true = evaluating$Pobre_1, positive = 1)
-spf_undersampling_evaluate <- Specificity(y_pred = Pobre_1_hat_oversamping_evaluate, y_true = evaluating$Pobre_1, positive = 1)
+acc_undersampling_evaluate <- Accuracy(y_pred = Pobre_1_hat_undersampling_evaluate, y_true = evaluating$Pobre_1)
+pre_undersampling_evaluate <- Precision(y_pred = Pobre_1_hat_undersampling_evaluate, y_true = evaluating$Pobre_1, positive = 1)
+rec_undersampling_evaluate <- Recall(y_pred = Pobre_1_hat_undersampling_evaluate, y_true = evaluating$Pobre_1, positive = 1)
+f1_undersampling_evaluate <- F1_Score(y_pred = Pobre_1_hat_undersampling_evaluate, y_true = evaluating$Pobre_1, positive = 1)
+spf_undersampling_evaluate <- Specificity(y_pred = Pobre_1_hat_undersampling_evaluate, y_true = evaluating$Pobre_1, positive = 1)
 FPR_undersampling_evaluate <- cm_logit_undersampling_evaluate[2,1]/sum(cm_logit_undersampling_evaluate[2,])
 FNR_undersampling_evaluate <- cm_logit_undersampling_evaluate[1,2]/sum(cm_logit_undersampling_evaluate[1,])
 
@@ -596,11 +591,11 @@ metricas_undersampling_evaluate <- data.frame(Modelo = "Logit - correcion imbala
 
 # Esto no se debería hacer sobre la base de testeo pero se hace solo a modo ilustrativo
 
-prubea <- seq(0.1, 0.9, length.out = 100)
+thresholds <- seq(0.1, 0.9, length.out = 100)
 opt_t <- data.frame()
 for (t in thresholds) {
-  y_pred_t <- as.numeric(Pobre_1_logit_evaluating > t)
-  f1_t <- F1_Score(y_true = test$infielTRUE, y_pred = y_pred_t,
+  y_pred_t <- as.numeric(Pobre_1_logit_training > t)
+  f1_t <- F1_Score(y_true = training$Pobre_1, y_pred = y_pred_t,
                    positive = 1)
   fila <- data.frame(t = t, F1 = f1_t)
   opt_t <- bind_rows(opt_t, fila)
@@ -616,22 +611,87 @@ ggplot(opt_t, aes(x = t, y = F1)) +
              color = "red") +
   labs(x = "Threshold")
 
+regla <- mejor_t
+
+Pobre_1_hat_threshold_op_training <- ifelse(Pobre_1_logit_training>regla,1,0) ## Prediccion de Pobre_1za
+
+cm_logit_threshold_op_training <- confusionMatrix(data = factor(Pobre_1_hat_threshold_op_training),
+                                                   reference = factor(training$Pobre_1),
+                                                   mode = "sens_spec", positive = "1")
+
+cm_logit_threshold_op_training <- cm_logit_threshold_op_training$table
 
 
+acc_threshold_op_training <- Accuracy(y_pred = Pobre_1_hat_threshold_op_training, y_true = training$Pobre_1)
+pre_threshold_op_training <- Precision(y_pred = Pobre_1_hat_threshold_op_training, y_true = training$Pobre_1, positive = 1)
+rec_threshold_op_training <- Recall(y_pred = Pobre_1_hat_threshold_op_training, y_true = training$Pobre_1, positive = 1)
+f1_threshold_op_training <- F1_Score(y_pred = Pobre_1_hat_threshold_op_training, y_true = training$Pobre_1, positive = 1)
+spf_threshold_op_training <- Specificity(y_pred = Pobre_1_hat_threshold_op_training, y_true = training$Pobre_1, positive = 1)
+FPR_threshold_op_training <- cm_logit_threshold_op_training[2,1]/sum(cm_logit_threshold_op_training[2,])
+FNR_threshold_op_training <- cm_logit_threshold_op_training[1,2]/sum(cm_logit_threshold_op_training[1,])
+
+metricas_threshold_op_training <- data.frame(Modelo = "Logit - umbral optimo",
+                                              "Muestreo" = NA, 
+                                              "Evaluación" = "Fuera de muestra",
+                                              "Accuracy" = acc_threshold_op_training,
+                                              "Precision" = pre_threshold_op_training,
+                                              "Recall" = rec_threshold_op_training,
+                                              "F1" = f1_threshold_op_training,
+                                              "Specificity" = spf_threshold_op_training,
+                                              "FPR" = FPR_threshold_op_training,
+                                              "FNR" = FNR_threshold_op_training)
+
+
+
+Pobre_1_hat_threshold_op_evaluating <- ifelse(Pobre_1_logit_evaluating>regla,1,0) ## Prediccion de Pobre_1za
+
+cm_logit_threshold_op_evaluating <- confusionMatrix(data = factor(Pobre_1_hat_threshold_op_evaluating),
+                                                  reference = factor(evaluating$Pobre_1),
+                                                  mode = "sens_spec", positive = "1")
+
+cm_logit_threshold_op_evaluating <- cm_logit_threshold_op_evaluating$table
+
+
+acc_threshold_op_evaluating <- Accuracy(y_pred = Pobre_1_hat_threshold_op_evaluating, y_true = evaluating$Pobre_1)
+pre_threshold_op_evaluating <- Precision(y_pred = Pobre_1_hat_threshold_op_evaluating, y_true = evaluating$Pobre_1, positive = 1)
+rec_threshold_op_evaluating <- Recall(y_pred = Pobre_1_hat_threshold_op_evaluating, y_true = evaluating$Pobre_1, positive = 1)
+f1_threshold_op_evaluating <- F1_Score(y_pred = Pobre_1_hat_threshold_op_evaluating, y_true = evaluating$Pobre_1, positive = 1)
+spf_threshold_op_evaluating <- Specificity(y_pred = Pobre_1_hat_threshold_op_evaluating, y_true = evaluating$Pobre_1, positive = 1)
+FPR_threshold_op_evaluating <- cm_logit_threshold_op_evaluating[2,1]/sum(cm_logit_threshold_op_evaluating[2,])
+FNR_threshold_op_evaluating <- cm_logit_threshold_op_evaluating[1,2]/sum(cm_logit_threshold_op_evaluating[1,])
+
+metricas_threshold_op_evaluating <- data.frame(Modelo = "Logit - umbral optimo",
+                                             "Muestreo" = NA, 
+                                             "Evaluación" = "Fuera de muestra",
+                                             "Accuracy" = acc_threshold_op_evaluating,
+                                             "Precision" = pre_threshold_op_evaluating,
+                                             "Recall" = rec_threshold_op_evaluating,
+                                             "F1" = f1_threshold_op_evaluating,
+                                             "Specificity" = spf_threshold_op_evaluating,
+                                             "FPR" = FPR_threshold_op_evaluating,
+                                             "FNR" = FNR_threshold_op_evaluating)
 
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
-## SMOTE, Tuning model (hiperparametros), lasso
+## Tuning model (hiperparametros), lasso
 
 # Tabla de metricas
 
 metricas <- bind_rows(metricas_training_r1, metricas_evaluating_r1, metricas_training_r2,
                       metricas_evaluating_r2, metricas_oversampling, metricas_oversampling_evaluate,
-                      metricas_undersampling, metricas_undersampling_evaluate)
+                      metricas_undersampling, metricas_undersampling_evaluate,
+                      metricas_threshold_op_training, metricas_threshold_op_evaluating)
+
+metricas1 <- bind_rows(metricas_evaluating_r1, metricas_evaluating_r2, metricas_oversampling_evaluate,
+                       metricas_undersampling_evaluate, metricas_threshold_op_evaluating)
 
 metricas %>%
+  kbl(digits = 2)  %>%
+  kable_styling(full_width = T)
+
+metricas1 %>%
   kbl(digits = 2)  %>%
   kable_styling(full_width = T)
 
@@ -642,7 +702,57 @@ metricas %>%
 
 ## Linear discriminant analysis
 
+library(MASS)
+# Fit the model
+model <- lda(Species~., data = train.transformed)
+# Make predictions
+predictions <- model %>% predict(test.transformed)
+# Model accuracy
+mean(predictions$class==test.transformed$Species)
 
+library(MASS)
+model <- lda(Species~., data = train.transformed)
+model
+
+plot(model)
+
+predictions <- model %>% predict(test.transformed)
+names(predictions)
+
+# Predicted classes
+head(predictions$class, 6)
+# Predicted probabilities of class memebership.
+head(predictions$posterior, 6) 
+# Linear discriminants
+head(predictions$x, 3) 
+
+lda.data <- cbind(train.transformed, predict(model)$x)
+ggplot(lda.data, aes(LD1, LD2)) +
+  geom_point(aes(color = Species))
+
+
+## QDA
+
+library(MASS)
+# Fit the model
+model <- qda(Species~., data = train.transformed)
+model
+# Make predictions
+predictions <- model %>% predict(test.transformed)
+# Model accuracy
+mean(predictions$class == test.transformed$Species)
+
+
+## MDA
+
+library(mda)
+# Fit the model
+model <- mda(Species~., data = train.transformed)
+model
+# Make predictions
+predicted.classes <- model %>% predict(test.transformed)
+# Model accuracy
+mean(predicted.classes == test.transformed$Species)
 
 
 
