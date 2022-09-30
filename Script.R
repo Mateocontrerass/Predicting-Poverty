@@ -440,105 +440,105 @@ prop.table(table(evaluating$Pobre))
   #install.packages("glmnet")
   library(glmnet)
   ## Lasso
-  x<- subset(training, select = c(-Li,-Lp,-id,-Pobre_1, -ing))
-  y <- training$ing
-  
-  modelo_lasso <- glmnet(
-    x,
-    y,
-    alpha = 1,
-    nlambda = ,
-    standardize = FALSE
-  )
-  
-  # Analicemos c?mo cambian los coeficientes para diferentes lambdas
-  regularizacion <- modelo_lasso$beta %>% 
-    as.matrix() %>%
-    t() %>% 
-    as_tibble() %>%
-    mutate(lambda = modelo_lasso$lambda)
-  
-  regularizacion <- regularizacion %>%
-    pivot_longer(
-      cols = !lambda, 
-      names_to = "predictor",
-      values_to = "coeficientes"
+    x<- subset(training, select = c(-Li,-Lp,-id,-Pobre_1, -ing))
+    y <- training$ing
+    
+    modelo_lasso <- glmnet(
+      x,
+      y,
+      alpha = 1,
+      nlambda = ,
+      standardize = FALSE
     )
-  
-  regularizacion %>%
-    ggplot(aes(x = lambda, y = coeficientes, color = predictor)) +
-    geom_line() +
-    scale_x_log10(
-      breaks = scales::trans_breaks("log10", function(x) 10^x),
-      labels = scales::trans_format("log10",
-                                    scales::math_format(10^.x))
-    ) +
-    labs(title = "Coeficientes del modelo en funci?n de la regularizaci?n (Lasso)", x = "Lambda", y = "Coeficientes") +
-    theme_bw() +
-    theme(legend.position="bottom")
-  
-  newx<-data.matrix(subset(evaluating, select = c(-Li,-Lp,-id,-Pobre_1, -ing)))
-  predicciones_lasso <- predict(modelo_lasso, 
-                                newx )
-  lambdas_lasso <- modelo_lasso$lambda
-  
-  # Cada predicci?n se va a evaluar
-  y_test = evaluating$ing
-  resultados_lasso <- data.frame()
-  for (i in 1:length(lambdas_lasso)) {
-    l <- lambdas_lasso[i]
-    y_hat_out2 <- predicciones_lasso[, i]
-    r22 <- R2_Score(y_pred = y_hat_out2, y_true = y_test)
-    rmse2 <- RMSE(y_pred = y_hat_out2, y_true = y_test)
-    resultado <- data.frame(Modelo = "Lasso",
-                            Muestra = "Fuera",
-                            Lambda = l,
-                            R2_Score = r22, 
-                            RMSE = rmse2)
-    resultados_lasso <- bind_rows(resultados_lasso, resultado)
-  }
-  
-  #Revisamos los posibles MSE
-  
-  ggplot(resultados_lasso, aes(x = Lambda, y = RMSE)) +
-    geom_point() +
-    geom_line() +
-    theme_bw() +
-    scale_y_continuous(labels = scales::comma)
-  
-  filtro <- resultados_lasso$RMSE == min(resultados_lasso$RMSE)
-  mejor_lambda_lasso <- resultados_lasso[filtro, "Lambda"]
-  
-  # Guardamos el mejor Lasso
-  #predicción con la base de datos training
-  newxt<-data.matrix(subset(training, select = c(-Li,-Lp,-id,-Pobre_1, -ing)))
-  y_hat_in2 <- predict.glmnet(modelo_lasso,
-                              newxt,
-                              s = mejor_lambda_lasso)
-  
-  #predicción con la base de datos test
-  y_hat_out2 <- predict.glmnet(modelo_lasso,
-                               newx,
-                               s = mejor_lambda_lasso)
-  #Evaluamos
-  
-  pobre_hat_lasso<-ifelse(y_hat_out2<evaluating$Lp,1,0)
-  plot(pobre_hat_lasso)
-  
-  pobre_hat_lasso<-factor(pobre_hat_lasso)
-  Pobre_1<-factor(evaluating$Pobre_1)
-  
-  cm_lasso<-confusionMatrix(pobre_hat_lasso,Pobre_1)
-  
-  
-  resultados<-data.frame(Modelo="Lasso",Base="Predicción",
-                         Accuracy=cm_lasso$overall[1],
-                         Sensitivity=cm_lasso$byClass[1],
-                         Specificity=cm_lasso$byClass[2])
-  
-  
-  
-  resultados
+    
+    # Analicemos c?mo cambian los coeficientes para diferentes lambdas
+    regularizacion <- modelo_lasso$beta %>% 
+      as.matrix() %>%
+      t() %>% 
+      as_tibble() %>%
+      mutate(lambda = modelo_lasso$lambda)
+    
+    regularizacion <- regularizacion %>%
+      pivot_longer(
+        cols = !lambda, 
+        names_to = "predictor",
+        values_to = "coeficientes"
+      )
+    
+    regularizacion %>%
+      ggplot(aes(x = lambda, y = coeficientes, color = predictor)) +
+      geom_line() +
+      scale_x_log10(
+        breaks = scales::trans_breaks("log10", function(x) 10^x),
+        labels = scales::trans_format("log10",
+                                      scales::math_format(10^.x))
+      ) +
+      labs(title = "Coeficientes del modelo en funci?n de la regularizaci?n (Lasso)", x = "Lambda", y = "Coeficientes") +
+      theme_bw() +
+      theme(legend.position="bottom")
+    
+    newx<-data.matrix(subset(evaluating, select = c(-Li,-Lp,-id,-Pobre_1,-ing)))
+    predicciones_lasso <- predict(modelo_lasso, 
+                                  newx )
+    lambdas_lasso <- modelo_lasso$lambda
+    
+    # Cada predicci?n se va a evaluar
+    y_test = evaluating$ing
+    resultados_lasso <- data.frame()
+    for (i in 1:length(lambdas_lasso)) {
+      l <- lambdas_lasso[i]
+      y_hat_out2 <- predicciones_lasso[, i]
+      r22 <- R2_Score(y_pred = y_hat_out2, y_true = evaluating$ing)
+      rmse2 <- RMSE(y_pred = y_hat_out2, y_true = evaluating$ing)
+      resultado <- data.frame(Modelo = "Lasso",
+                              Muestra = "Fuera",
+                              Lambda = l,
+                              R2_Score = r22, 
+                              RMSE = rmse2)
+      resultados_lasso <- bind_rows(resultados_lasso, resultado)
+    }
+    
+    #Revisamos los posibles MSE
+    
+    ggplot(resultados_lasso, aes(x = Lambda, y = RMSE)) +
+      geom_point() +
+      geom_line() +
+      theme_bw() +
+      scale_y_continuous(labels = scales::comma)
+    
+    filtro <- resultados_lasso$RMSE == min(resultados_lasso$RMSE)
+    mejor_lambda_lasso <- resultados_lasso[filtro, "Lambda"]
+    
+    # Guardamos el mejor Lasso
+    #predicción con la base de datos training
+    newxt<-data.matrix(subset(training, select = c(-Li,-Lp,-id,-Pobre_1, -ing)))
+    y_hat_in2 <- predict.glmnet(modelo_lasso,
+                                newxt,
+                                s = mejor_lambda_lasso)
+    
+    #predicción con la base de datos test
+    y_hat_out2 <- predict.glmnet(modelo_lasso,
+                                 newx,
+                                 s = mejor_lambda_lasso)
+    #Evaluamos
+    
+    pobre_hat_lasso<-ifelse(y_hat_out2<evaluating$Lp,1,0)
+    plot(pobre_hat_lasso)
+    
+    pobre_hat_lasso<-factor(pobre_hat_lasso)
+    Pobre_1<-factor(evaluating$Pobre_1)
+    
+    cm_lasso<-confusionMatrix(pobre_hat_lasso,Pobre_1)
+    
+    
+    resultados<-data.frame(Modelo="Lasso",Base="Predicción",
+                           Accuracy=cm_lasso$overall[1],
+                           Sensitivity=cm_lasso$byClass[1],
+                           Specificity=cm_lasso$byClass[2])
+    
+    
+    
+    resultados
   
   #Ridge 
   modelo_ridge <- glmnet(
@@ -609,6 +609,7 @@ prop.table(table(evaluating$Pobre))
   resultados_ridge_2 <-predict(modelo_ridge, newx, s = mejor_lambda_ridge)
   
   pobre_hat_r<-ifelse(resultados_ridge_2<evaluating$Lp,1,0)
+  plot(pobre_hat_r)
   
   pobre_hat_r<-factor(pobre_hat_r)
   Pobre_1<-factor(evaluating$Pobre_1)
@@ -651,12 +652,13 @@ prop.table(table(evaluating$Pobre))
 
   resultados_elastic_2 <-predict(modelo_elastic, newx, s = "lambda.min")
   
-  evaluating$pobre_hat_elastic<-ifelse(resultados_elastic_2<evaluating$Lp,1,0)
+  pobre_hat_elastic<-ifelse(resultados_elastic_2<evaluating$Lp,1,0)
+  plot(pobre_hat_elastic)
   
-  evaluating$pobre_hat_elastic<-factor(evaluating$pobre_hat_elastic)
-  evaluating$Pobre_1<-factor(evaluating$Pobre_1)
+  pobre_hat_elastic<-factor(pobre_hat_elastic)
+  Pobre_1<-factor(Pobre_1)
   
-  cm_elastic<-confusionMatrix(evaluating$pobre_hat_elastic,evaluating$Pobre_1)
+  cm_elastic<-confusionMatrix(pobre_hat_elastic,Pobre_1)
   
   
   resultados<-data.frame(Modelo="elastic net",Base="Predicción",
