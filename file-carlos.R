@@ -5,7 +5,7 @@ cat("\f")
 require(pacman)
 p_load(tidyverse,dplyr,here,skimr,tidyr,gamlr,modelsummary,caret,
        rio,knitr, kableExtra, rstudioapi,tidymodels,janitor,MLmetrics,
-       rattle,doParallel, ROCR, themis, install = TRUE)
+       rattle,doParallel, ROCR, themis, MASS, install = TRUE)
 
 set.seed(666)
 
@@ -30,14 +30,15 @@ variables_numericas <- c("P6040", "P6426", "P5000",
                          "P5010", "P5130", "Nper", "Npersug")
 escalador <- preProcess(training[, variables_numericas])
 train_s <- training
-test_s <- evaluating
+evaluate_s <- evaluating
 train_s[, variables_numericas] <- predict(escalador, training[, variables_numericas])
-test_s[, variables_numericas] <- predict(escalador, evaluating[, variables_numericas])
+evaluate_s[, variables_numericas] <- predict(escalador, evaluating[, variables_numericas])
 
 training <- train_s
-evaluating <- test_s
+evaluating <- evaluate_s
 
 rm(escalador, train_s, test_s)
+rm(variables_numericas)
 
 ## Modelo
 
@@ -702,9 +703,12 @@ metricas1 %>%
 
 ## Linear discriminant analysis
 
+logit_undersampling <- glm(Pobre_1 ~.,
+                           data = train_undersampling, family = binomial(link="logit")) ## Estimar modelo logit en evaluate
+
 library(MASS)
 # Fit the model
-model <- lda(Species~., data = train.transformed)
+Linear_discriminant <- lda(Species~., data = train.transformed)
 # Make predictions
 predictions <- model %>% predict(test.transformed)
 # Model accuracy
@@ -755,8 +759,41 @@ predicted.classes <- model %>% predict(test.transformed)
 mean(predicted.classes == test.transformed$Species)
 
 
+logit_undersampling <- glm(Pobre_1 ~.,
+                           data = train_undersampling, family = binomial(link="logit")) ## Estimar modelo logit en evaluate
+
+Pobre_1_logit_undersampling <- predict(logit_undersampling,
+                                       newdata = train_undersampling,
+                                       type = "response") # Estimación de predicciones de Pobre_1za
+
+Pobre_1_hat_undersampling <- ifelse(Pobre_1_logit_undersampling>regla1,1,0) ## Prediccion de Pobreza
+
+cm_logit_undersampling <- confusionMatrix(data = factor(Pobre_1_hat_undersampling),
+                                          reference = factor(train_undersampling$Pobre_1),
+                                          mode = "sens_spec", positive = "1")
+
+cm_logit_undersampling <- cm_logit_undersampling$table
+
+skim(train_undersampling$Pobre_1)
 
 
+acc_undersampling <- Accuracy(y_pred = Pobre_1_hat_undersampling, y_true = train_undersampling$Pobre_1)
+pre_undersampling <- Precision(y_pred = Pobre_1_hat_undersampling, y_true = train_undersampling$Pobre_1, positive = 1)
+rec_undersampling <- Recall(y_pred = Pobre_1_hat_undersampling, y_true = train_undersampling$Pobre_1, positive = 1)
+f1_undersampling <- F1_Score(y_pred = Pobre_1_hat_undersampling, y_true = train_undersampling$Pobre_1, positive = 1)
+spf_undersampling <- Specificity(y_pred = Pobre_1_hat_undersampling, y_true = train_undersampling$Pobre_1, positive = 1)
+FPR_undersampling <- cm_logit_undersampling[2,1]/sum(cm_logit_undersampling[2,])
+FNR_undersampling <- cm_logit_undersampling[1,2]/sum(cm_logit_undersampling[1,])
 
+metricas_undersampling <- data.frame(Modelo = "Logit - correccion de imbalance",
+                                     "Muestreo" = "undersampling", 
+                                     "Evaluación" = "Dentro de muestra",
+                                     "Accuracy" = acc_undersampling,
+                                     "Precision" = pre_undersampling,
+                                     "Recall" = rec_undersampling,
+                                     "F1" = f1_undersampling,
+                                     "Specificity" = spf_undersampling,
+                                     "FPR" = FPR_undersampling,
+                                     "FNR" = FNR_undersampling)
 
 
