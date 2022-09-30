@@ -313,7 +313,7 @@ metricas_evaluating_r2 <- data.frame(Modelo = "Logit - Gráfica",
 
 ### Metodos para solución de imbalance
 
-## Remuestreo - Oversampling
+## Remuestreo - SMOTE
 
 library(themis)
 
@@ -350,7 +350,7 @@ ggplot(data=train_oversampling , mapping=aes(Pobre_1,Pobre_1_logit_oversampling)
 
 regla1 <- 0.5 # Se define regla de Bayes
 
-Pobre_1_hat_oversamping <- ifelse(Pobre_1_logit_oversampling>regla1,1,0) ## Prediccion de Pobreza
+Pobre_1_hat_oversampling <- ifelse(Pobre_1_logit_oversampling>regla1,1,0) ## Prediccion de Pobreza
 
 
 ggplot(train_oversampling, aes(x = Pobre_1)) +
@@ -360,14 +360,14 @@ ggplot(train_oversampling, aes(x = Pobre_1)) +
        x = "",
        y = "Distribución")
 
-ggplot(train_oversampling, aes(x = Pobre_1_hat_oversamping)) +
+ggplot(train_oversampling, aes(x = Pobre_1_hat_oversampling)) +
   geom_bar(fill = "darkblue") +
   theme_bw() +
   labs(title = "¿Es la persona Pobre_1? - Predicción",
        x = "",
        y = "Distribución")
 
-cm_logit_oversampling <- confusionMatrix(data = factor(Pobre_1_hat_oversamping),
+cm_logit_oversampling <- confusionMatrix(data = factor(Pobre_1_hat_oversampling),
                                          reference = factor(train_oversampling$Pobre_1),
                                          mode = "sens_spec", positive = "1")
 
@@ -376,16 +376,16 @@ cm_logit_oversampling <- cm_logit_oversampling$table
 skim(train_oversampling$Pobre_1)
 
 
-acc_oversampling <- Accuracy(y_pred = Pobre_1_hat_oversamping, y_true = train_oversampling$Pobre_1)
-pre_oversampling <- Precision(y_pred = Pobre_1_hat_oversamping, y_true = train_oversampling$Pobre_1, positive = 1)
-rec_oversampling <- Recall(y_pred = Pobre_1_hat_oversamping, y_true = train_oversampling$Pobre_1, positive = 1)
-f1_oversampling <- F1_Score(y_pred = Pobre_1_hat_oversamping, y_true = train_oversampling$Pobre_1, positive = 1)
-spf_oversampling <- Specificity(y_pred = Pobre_1_hat_oversamping, y_true = train_oversampling$Pobre_1, positive = 1)
+acc_oversampling <- Accuracy(y_pred = Pobre_1_hat_oversampling, y_true = train_oversampling$Pobre_1)
+pre_oversampling <- Precision(y_pred = Pobre_1_hat_oversampling, y_true = train_oversampling$Pobre_1, positive = 1)
+rec_oversampling <- Recall(y_pred = Pobre_1_hat_oversampling, y_true = train_oversampling$Pobre_1, positive = 1)
+f1_oversampling <- F1_Score(y_pred = Pobre_1_hat_oversampling, y_true = train_oversampling$Pobre_1, positive = 1)
+spf_oversampling <- Specificity(y_pred = Pobre_1_hat_oversampling, y_true = train_oversampling$Pobre_1, positive = 1)
 FPR_oversampling <- cm_logit_oversampling[2,1]/sum(cm_logit_oversampling[2,])
 FNR_oversampling <- cm_logit_oversampling[1,2]/sum(cm_logit_oversampling[1,])
 
 metricas_oversampling <- data.frame(Modelo = "Logit - correccion de imbalance",
-                                     "Muestreo" = "Oversampling", 
+                                     "Muestreo" = "SMOTE", 
                                      "Evaluación" = "Dentro de muestra",
                                      "Accuracy" = acc_oversampling,
                                      "Precision" = pre_oversampling,
@@ -397,7 +397,7 @@ metricas_oversampling <- data.frame(Modelo = "Logit - correccion de imbalance",
 
 ## Curva de ROC
 
-predicciones_oversampling <- prediction(Pobre_1_hat_oversamping, train_oversampling$Pobre_1)
+predicciones_oversampling <- prediction(Pobre_1_hat_oversampling, train_oversampling$Pobre_1)
 ROC_oversampling <- performance(predicciones_oversampling,"tpr","fpr")
 plot(ROC_oversampling, main = "ROC curve", col="red")
 abline(a = 0, b = 1)
@@ -436,7 +436,7 @@ FPR_oversampling_evaluate <- cm_logit_oversampling_evaluate[2,1]/sum(cm_logit_ov
 FNR_oversampling_evaluate <- cm_logit_oversampling_evaluate[1,2]/sum(cm_logit_oversampling_evaluate[1,])
 
 metricas_oversampling_evaluate <- data.frame(Modelo = "Logit - correcion imbalance",
-                                            "Muestreo" = "Oversampling", 
+                                            "Muestreo" = "SMOTE", 
                                             "Evaluación" = "Fuera de muestra",
                                             "Accuracy" = acc_oversampling_evaluate,
                                             "Precision" = pre_oversampling_evaluate,
@@ -471,14 +471,14 @@ a-b ## se eliminaron 188665 obsesrvaciones nuevas
 colnames(train_undersampling)
 
 logit_undersampling <- glm(Pobre_1 ~.,
-                          data = train_undersampling, family = binomial(link="logit")) ## Estimar modelo logit en evaluate
+                           data = train_undersampling, family = binomial(link="logit")) ## Estimar modelo logit en evaluate
 
 tidy(logit_undersampling)
 summary(logit_undersampling)
 
 Pobre_1_logit_undersampling <- predict(logit_undersampling,
-                                      newdata = train_undersampling,
-                                      type = "response") # Estimación de predicciones de Pobre_1za
+                                       newdata = train_undersampling,
+                                       type = "response") # Estimación de predicciones de Pobre_1za
 summary(Pobre_1_logit_undersampling)
 
 ggplot(data=train_undersampling , mapping=aes(Pobre_1,Pobre_1_logit_undersampling)) + 
@@ -497,7 +497,7 @@ ggplot(train_undersampling, aes(x = Pobre_1)) +
        x = "",
        y = "Distribución")
 
-ggplot(train_undersampling, aes(x = Pobre_1_hat_oversamping)) +
+ggplot(train_undersampling, aes(x = Pobre_1_hat_undersampling)) +
   geom_bar(fill = "darkblue") +
   theme_bw() +
   labs(title = "¿Es la persona Pobre_1? - Predicción",
