@@ -543,7 +543,7 @@ prop.table(table(evaluating$Pobre))
   library(glmnet)
   ## Lasso
   set.seed(666)
-    x<- subset(training, select = c(-Li,-Lp,-id,-Pobre_1, -ing))
+    x<- subset(training, select = c(-id,-Li,-Lp,-id,-Pobre_1, -ing))
     y <- training$ing
     
     modelo_lasso <-glmnet(
@@ -585,7 +585,7 @@ prop.table(table(evaluating$Pobre))
     # Cada predicci?n se va a evaluar
     set.seed(666)
     
-    newxt<-data.matrix(subset(training, select = c(-Li,-Lp,-id,-Pobre_1, -ing)))
+    newxt<-data.matrix(subset(training, select = c(-id,-Li,-Lp,-id,-Pobre_1, -ing)))
     modelo_lasso_cv <-cv.glmnet(
       x = newxt,
       y,
@@ -600,7 +600,7 @@ prop.table(table(evaluating$Pobre))
     # Guardamos el mejor Lasso
     mejor_lambda_lasso = modelo_lasso_cv$lambda.min
     #predicción con la base de datos training
-    newxt<-data.matrix(subset(training, select = c(-Li,-Lp,-id,-Pobre_1, -ing)))
+    newxt<-data.matrix(subset(training, select = c(-id,-Li,-Lp,-id,-Pobre_1, -ing)))
     y_hat_in2 <- predict.glmnet(modelo_lasso,
                                 newxt,
                                 s = mejor_lambda_lasso)
@@ -1523,7 +1523,8 @@ metricas <- bind_rows(metricas_training_r1, metricas_evaluating_r1, metricas_tra
                       metricas_threshold_op_training, metricas_threshold_op_evaluating)
 
 metricas1 <- bind_rows(metricas_evaluating_r1, metricas_evaluating_r2, metricas_threshold_op_evaluating,
-                       metricas_oversampling_evaluate, metricas_undersampling_evaluate)
+                       metricas_oversampling_evaluate, metricas_undersampling_evaluate, resultados_l, resultados_r,
+                       resultados_e, resultados_xg)
 
 metricas %>%
   kbl(digits = 2)  %>%
@@ -1581,13 +1582,13 @@ evaluating$Pobre_1<-factor(evaluating$Pobre_1)
 cm<-confusionMatrix(evaluating$pobre_hat,evaluating$Pobre_1)
 
 
-resultados<-data.frame(Modelo="LM",Base="Predicción",
+resultados_LM<-data.frame(Modelo="LM",Base="Predicción",
                        Accuracy=cm$overall[1],
                        Sensitivity=cm$byClass[1],
                        Specificity=cm$byClass[2])
 
-resultados
-cm
+resultados_LM
+
 
 #------------------------------------------------------------------------------
 
@@ -1612,13 +1613,12 @@ evaluating$pobre_hat_arbol<-predict(arbol,subset(evaluating,select=-c(id,Li,Lp,P
 cm_arbol<-confusionMatrix(evaluating$pobre_hat_arbol,reference = evaluating$Pobre_1)
 cm_arbol
 
-resultados2<-data.frame(Modelo="Arbol",Base="Clasificación",
+resultados_arbol<-data.frame(Modelo="Arbol",Base="Clasificación",
                        Accuracy=cm_arbol$overall[1],
                        Sensitivity=cm_arbol$byClass[1],
                        Specificity=cm_arbol$byClass[2])
 
-resultados_general<-rbind(resultados,resultados2)
-resultados_general
+resultados_arbol
 
 
 
@@ -1663,17 +1663,17 @@ xgtree <- train(Pobre_1~.,data=tr_m,method="xgbTree",trControl=ctrl,metric="Sens
 
 ev_m$pred_arbol <-predict(xgtree,newdata=ev_m)
 
-cm_xg <- confusionMatrix(ev_m$pred_arbol,ev_m$Pobre_1)
+cm_xgt <- confusionMatrix(ev_m$pred_arbol,ev_m$Pobre_1)
 
 
-resultados_xg<-data.frame(Modelo="XGBoost",Base="Clasificación",
+resultados_xgt<-data.frame(Modelo="XGBoost",Base="Clasificación",
                         Accuracy=cm_xg$overall[1],
                         Sensitivity=cm_xg$byClass[1],
                         Specificity=cm_xg$byClass[2])
 
-resultados_xg
+resultados_xgt
 
-resultados_gen<-rbind(resultados_general,resultados_xg)
+
 
 
 
@@ -1699,7 +1699,7 @@ evaluating$Pobre_1<-factor(evaluating$Pobre_1)
 cm<-confusionMatrix(evaluating$pobre_logit_hat_todo,evaluating$Pobre_1)
 
 
-resultados3<-data.frame(Modelo="Logit_entero",Base="Clasificación",
+resultados_log<-data.frame(Modelo="Logit_entero",Base="Clasificación",
                        Accuracy=cm$overall[1],
                        Sensitivity=cm$byClass[1],
                        Specificity=cm$byClass[2])
@@ -1707,9 +1707,14 @@ resultados3<-data.frame(Modelo="Logit_entero",Base="Clasificación",
 
 
 
-resultados3
+resultados_log
 
-resultados_genf<-rbind(resultados_gen,resultados3)
-resultados_genf
+metricas1 <- bind_rows(metricas_evaluating_r1, metricas_evaluating_r2, metricas_threshold_op_evaluating,
+                       metricas_oversampling_evaluate, metricas_undersampling_evaluate, resultados_l, resultados_r,
+                       resultados_e, resultados_xg, resultados_LM, resultados_arbol, resultados_xgt, resultados_log)
+
+metricas1 %>%
+  kbl(digits = 2)  %>%
+  kable_styling(full_width = T)
 
 
