@@ -21,8 +21,6 @@ require(pacman)
 p_load(tidyverse,dplyr,here,skimr,tidyr,gamlr,modelsummary,caret,
        rio,knitr, kableExtra, rstudioapi,tidymodels,janitor,MLmetrics,
        rattle,doParallel,mixgb, install = TRUE)
-library(tidyverse)
-library("mixgb")
 
 set.seed(666)
 
@@ -63,7 +61,8 @@ base_completa<-subset(base_completa,select=c(-Dominio,-Orden,-Fex_c,-Fex_dpto,-N
                                              -P7510s2,-P7510s3,-P7510s5,-P7510s6,
                                              -P7510s7,-P7500s2,-P7500s3,-Oficio,-Des,-Pet,-Oc,-Ina))
 
-  #Dropeamos dominio que es lo mismo que Depto
+  #Dropeamos dominio que es lo mismo que Depto y otras variables que no
+  #aportar al modelo
 
 
 rm(hogares,personas)
@@ -81,12 +80,13 @@ ing<-base_completa$Ingtot
 
 
 
-indices_chiquitos<-which(objeto$complete_rate>.5)
+indices_chiquitos<-which(objeto$complete_rate>0.5)
+  #seleccionar indices que cumplan con la condición
 
 
-
-  #Indices de complete rate>0.5
 base_completa<-subset(base_completa,select=c(indices_chiquitos))
+  #Indicar a la base que solo mantenga las variables obtenidos previamente
+
 
 base_completa<-cbind(base_completa,ing)
   #reoincorporamos la variable de ingreso
@@ -95,13 +95,10 @@ base_completa<-cbind(base_completa,ing)
 
 #------------------------------------------------------------------------------
 
-# Borramos las variables que no están en ambas bases de datos (base_completa vs train)
 
 
 hogares <- readRDS("data/test_hogares.Rds")
 personas <- readRDS("data/test_personas.Rds")
-
-
   #Cargamos las bases test
 
 test <-personas %>%  left_join(hogares) 
@@ -118,9 +115,10 @@ rm(hogares,personas)
 
 
 
-columnas_test<-c(names(test))
+  columnas_test<-c(names(test))
+  #Columnas de la base test
 
-columnas_base<-c(names(base_completa))
+  columnas_base<-c(names(base_completa))
 
   #Sacar las columnas presentes en en los DF
 
@@ -128,9 +126,9 @@ columnas_base<-c(names(base_completa))
   columnas_total<-intersect(columnas_base,columnas_test)
   #Intersección entre variables comunes
   
-  columnas_total
-  
+
   remover <- c("Pobre","ing")
+  
   
   columnas<-append(columnas_total,remover)
   #Agregamos pobre a la base total
@@ -149,10 +147,12 @@ columnas_base<-c(names(base_completa))
   variables_categoricas <- c("Depto","P6020","P6050","P6090","P6100",
                              "P6210","P6210s1","P6240","P7505",
                              "P5090","Clase","Pobre")
-  
+  #Objeto con variables categoricas aún no establecidas como tal
   
   
   base_completa[,variables_categoricas]<-lapply(base_completa[,variables_categoricas],factor)
+  # volver variables categoricas
+  
   
   variables_categoricas <- c("Depto","P6020","P6050","P6090","P6100",
                              "P6210","P6210s1","P6240","P7505",
@@ -162,24 +162,23 @@ columnas_base<-c(names(base_completa))
   test[,variables_categoricas]<-lapply(test[,variables_categoricas],factor)  
 
 #------------------------------------------------------------------------------  
-  #Descriptivas
+  # Graficas
   
   p_load(summarytools,install=T)
-  
   library(kableExtra)
   library(magrittr)
+
+  
+  base_graficas<-base_completa
+  
+  base_graficas$Pobre<-factor(base_graficas$Pobre,levels=c(0,1),labels=c("No","Si"))
+  #Ponerle etiquetas para mejor interpretación
+  
+
   
   
-  #names(base_completa)
-  #P6020,P6040,P6210s1,Pobre,ing
   
-  base_completa$Pobre<-factor(base_completa$Pobre,levels=c(0,1),labels=c("No","Si"))
-  
-  
-  prueba<-subset(subset(base_completa,as.numeric(base_completa$P6210s1)<15))
-  as.num
-  
-  p <- subset(subset(base_completa,as.numeric(base_completa$P6210s1)<15)) %>%
+  p <- subset(subset(base_graficas,as.numeric(base_graficas$P6210s1)<15)) %>%
     ggplot( aes(x=P6210s1, fill=Pobre)) +
     geom_bar( color="#e9ecef", alpha=0.6, position = 'dodge') +
     scale_fill_manual(values=c("#69b3a2", "#404080")) +
@@ -194,31 +193,37 @@ columnas_base<-c(names(base_completa))
   
    
    #Tablas
-   base_completa<-base_completa %>% 
+   base_graficas<-base_graficas %>% 
      rename(
          Sexo=P6020)
    
    
-   base_completa$P6020<-factor(base_completa$P6020,levels=c(1,2),labels=c("Hombre","Mujer"))
+   base_graficas$Sexo<-factor(base_graficas$Sexo,levels=c(1,2),labels=c("Hombre","Mujer"))
+   #Poner etiquetas
    
-   ct1 = crosstable(base_completa, c(Sexo), by=Pobre, total="both", 
+   
+   ct1 = crosstable(base_graficas, c(Sexo), by=Pobre, total="both", 
                     percent_pattern="{n} ({p_row}/{p_col})", percent_digits=0) %>%
-     as_flextable() %>% (path="Views/sexo_pobre.docx")
+     as_flextable()
+    #Crosstable entre sexo y pobre para entender mejor la distribución
+   
    
    ct1
    
     #No supe guardar este objeto asi que lo hice manual.
    
    
-   base_completa<-base_completa %>% 
+   base_graficas<-base_graficas %>% 
      rename(
          P6020=Sexo)  
-   
+   #Devolver el nombre
    
    
   #//
    
-   g <-subset(subset(base_completa,as.numeric(base_completa$Nper)<13)) %>%
+   #Grafica sobre el conteo de hogares por cantidad de personas perteneciente a este
+   
+   g <-subset(subset(base_graficas,as.numeric(base_graficas$Nper)<13)) %>%
      ggplot(aes(x=Nper, fill=Pobre)) +
      geom_bar( color="#e9ecef", alpha=0.6, position = 'dodge') +
      scale_fill_manual(values=c("#69b3a2", "#404080")) +
@@ -229,10 +234,11 @@ columnas_base<-c(names(base_completa))
    
 # //
    
-     
-   base_completa$P6100<-factor(base_completa$P6100,levels=c(1,2,3,9),labels=c("Contributivo","Especial","Subsidiado","No_sabe"))
+    #Grafica de afiliación por regimen de seguridad social
    
-   h <-subset(subset(base_completa,as.numeric(base_completa$P6100)<4)) %>%
+   base_graficas$P6100<-factor(base_graficas$P6100,levels=c(1,2,3,9),labels=c("Contributivo","Especial","Subsidiado","No_sabe"))
+   
+   h <-subset(subset(base_graficas,as.numeric(base_graficas$P6100)<4)) %>%
      ggplot(aes(x=P6100, fill=Pobre)) +
      geom_bar( color="#e9ecef", alpha=0.6, position = 'dodge') +
      scale_fill_manual(values=c("#69b3a2", "#404080"))+
@@ -250,18 +256,23 @@ library(tidytable)
 tr_cat<-subset(base_completa,select=c("Depto","P6020","P6050","P6090","P6100",
                                       "P6210","P6210s1","P6240","P7505",
                                       "P5090","Clase","Pobre"))
+  #Aplica para la base test tambien:
+  #Selecciono las variables categoricas
 
 tr_cat<-get_dummies(tr_cat,drop_first = T,dummify_na=F)
+  #Saco las dummies de cada (nivel-1) de cada variable categorica 
 
 tr_cat<-subset(tr_cat,select=c(-Depto,-P6020,-P6050,-P6090,-P6100,
                                 -P6210,-P6210s1,-P6240,-P7505,
                                 -P5090,-Clase,-Pobre))
+  #Elimino las categoricas
 
 te_cat<-subset(test,select=c("Depto","P6020","P6050","P6090","P6100",
                                             "P6210","P6210s1","P6240","P7505",
                                             "P5090","Clase"))
 
 te_cat<-get_dummies(te_cat,drop_first = T,dummify_na=F)
+
 
 
 te_cat<-subset(te_cat,select=c(-Depto,-P6020,-P6050,-P6090,-P6100,
@@ -280,16 +291,21 @@ detach("package:tidytable", unload = TRUE)
 #------------------------------------------------------------------------------
 
 base_completa1<-cbind(base_completa,tr_cat)
+  #Pego las variables dummy recien creadas
 
 base_completa1<-subset(base_completa1, select=c(-Depto,-P6020,-P6050,-P6090,-P6100,
                                -P6210,-P6210s1,-P6240,-P7505,
                                -P5090,-Clase,-Pobre))
+  #Elimino las categoricas otra vez
+
 
 test1<-cbind(test,te_cat)
 
 test1<-subset(test1,select=c(-Depto,-P6020,-P6050,-P6090,-P6100,
                                              -P6210,-P6210s1,-P6240,-P7505,
                                              -P5090,-Clase))
+
+  #Mismo procedimiento anterior
 
 columnas_test<-c(names(test1))
 
@@ -311,7 +327,7 @@ columnas<-append(columnas_total,remover)
 test1<-subset(test1,select=c(columnas_total))
 #Para que test tenga las mismas variables
 
-base_completa1<-subset(base_completa1,select=(columnas))
+base_completa1<-subset(base_completa1, select=c(columnas))
 #Depuramos la base para que tenga las mismas columnas que test.
 #Si no se tienen las mismas features falla el modelo.
 
@@ -319,7 +335,7 @@ base_completa1<-subset(base_completa1,select=(columnas))
 test<-test1
 base_completa<-base_completa1
 
-rm(tr_cat,te_cat,objeto,base_completa1,test1)
+rm(tr_cat,te_cat,objeto,base_completa1,test1,g,h,p,ct1)
 #------------------------------------------------------------------------------
   #Factor para variables de df test
   
@@ -479,10 +495,12 @@ prop.table(table(evaluating$Pobre))
 
   
   training<-cbind(identificadores,data_imputada)
+  data_rf_train<-cbind(identificadores,data_imputada)
   #Pego los identificadores
   
   
   save(data_rf_train,file="data/entrenamiento")
+  save(training,file="data/entrenamiento")
 
   
 #------------------------------------------------------------------------------
@@ -490,6 +508,8 @@ prop.table(table(evaluating$Pobre))
   #Base train imputada  
   load("data/entrenamiento")
   training<-data_rf_train
+  data_rf_train<-training # Algunos modelos corren con esta base asi que igual la dejo
+  
   
   colnames(data_rf_train)
   
@@ -1614,7 +1634,7 @@ resultados_xg<-data.frame(Modelo="XGBoost",Base="Clasificación",
 
 resultados_xg
 
-
+resultados_gen<-rbind(resultados_general,resultados_xg)
 
 
 
@@ -1650,7 +1670,7 @@ resultados3<-data.frame(Modelo="Logit_entero",Base="Clasificación",
 
 resultados3
 
-resultados_general<-rbind(resultados,resultados2,resultados3)
-resultados_general
+resultados_genf<-rbind(resultados_gen,resultados3)
+resultados_genf
 
 
