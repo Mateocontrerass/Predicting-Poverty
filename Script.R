@@ -885,6 +885,8 @@ rm(escalador, train_s, test_s)
 logit_training <- glm(Pobre_1 ~.,
                       data = training, family = binomial(link="logit")) ## Esimar modelo logit
 
+
+
 summary(logit_training)
 
 Pobre_1_logit_training <- predict(logit_training,
@@ -1717,5 +1719,35 @@ metricas1 <- bind_rows(metricas_evaluating_r1, metricas_evaluating_r2, metricas_
 metricas1 %>%
   kbl(digits = 2)  %>%
   kable_styling(full_width = T)
+
+
+# Predicciones _ Ridge (Ingreso)
+
+
+colnames(test)
+colnames(training)
+
+test_1 <- subset(test, select = -c(id,Lp,Li))
+
+test <- as.matrix(test)
+
+skim(test$id)
+
+
+ingreso_persona<-predict(modelo_ridge,test)
+
+pobre_hat <- ifelse(ingreso_persona>test$Lp,1,0)
+
+## Predicciones_ Logit (umbral optimo)
+
+pobre_persona <- predict(logit_training, test)
+
+regla <- mejor_t
+
+pobre_hat_clasif <- ifelse(Pobre_1_logit_training>regla,1,0)
+
+
+
+
 
 
