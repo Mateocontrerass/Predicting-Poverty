@@ -686,6 +686,26 @@ prop.table(table(evaluating$Pobre))
   resultados_regularizacion<-rbind(resultados_r,resultados_l, resultados_e)
   resultados_regularizacion
   
+  ##XGBoost 
+  #install.packages("xgboost")
+  
+  library(xgboost)
+  newxgt <- x %>% 
+    as.matrix() %>% 
+    xgb.DMatrix(data = .,label = y)
+  
+  newxg <- newx%>% 
+    xgb.DMatrix(data = ., label = evaluating$ing)
+  
+ params <- list(booster = "gbtree", objective = "reg:squarederror", eta=0.3, gamma=0, max_depth=6, subsample=1,colsample_bytree=1)
+ set.seed(666)
+  modelo_xgb <- xgb.cv(data = newxgt, params = params,
+                        nrounds = 300, nfold = 5, showsd = T, stratified = T, print_every_n = 10, early_stop_round = 20, maximize = F) 
+  
+  modelo_xgb
+ pred_xgb <-predict (modelo_xgb, newxg)
+  
+  
 #------------------------------------------------------------------------------
 
   #LM para ingreso
