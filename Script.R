@@ -20,9 +20,8 @@ cat("\f")
 require(pacman)
 p_load(tidyverse,dplyr,here,skimr,tidyr,gamlr,modelsummary,caret,
        rio,knitr, kableExtra, rstudioapi,tidymodels,janitor,MLmetrics,
-       rattle,doParallel, install = TRUE)
+       rattle,doParallel,mixgb, install = TRUE)
 library(tidyverse)
-install.packages("mixgb")
 library("mixgb")
 
 set.seed(666)
@@ -161,8 +160,91 @@ columnas_base<-c(names(base_completa))
   
   
   test[,variables_categoricas]<-lapply(test[,variables_categoricas],factor)  
+
+#------------------------------------------------------------------------------  
+  #Descriptivas
   
-  #------------------------------------------------------------------------------
+  p_load(summarytools,install=T)
+  
+  library(kableExtra)
+  library(magrittr)
+  
+  
+  #names(base_completa)
+  #P6020,P6040,P6210s1,Pobre,ing
+  
+  base_completa$Pobre<-factor(base_completa$Pobre,levels=c(0,1),labels=c("No","Si"))
+  
+  
+  prueba<-subset(subset(base_completa,as.numeric(base_completa$P6210s1)<15))
+  as.num
+  
+  p <- subset(subset(base_completa,as.numeric(base_completa$P6210s1)<15)) %>%
+    ggplot( aes(x=P6210s1, fill=Pobre)) +
+    geom_bar( color="#e9ecef", alpha=0.6, position = 'dodge') +
+    scale_fill_manual(values=c("#69b3a2", "#404080")) +
+    labs(fill="")+labs(x="Años de educación",y="Total",title="Total de años de educación \n entre personas pobres y no pobres")
+  
+  
+  p #Grafica conteo años de educación
+  ggsave("Views/Pobreza_educacion.jpg",plot=p)
+  
+   p_load(crosstable,install=T)
+   p_load(officer,install=T)
+  
+   
+   #Tablas
+   base_completa<-base_completa %>% 
+     rename(
+         Sexo=P6020)
+   
+   
+   base_completa$P6020<-factor(base_completa$P6020,levels=c(1,2),labels=c("Hombre","Mujer"))
+   
+   ct1 = crosstable(base_completa, c(Sexo), by=Pobre, total="both", 
+                    percent_pattern="{n} ({p_row}/{p_col})", percent_digits=0) %>%
+     as_flextable() %>% (path="Views/sexo_pobre.docx")
+   
+   ct1
+   
+    #No supe guardar este objeto asi que lo hice manual.
+   
+   
+   base_completa<-base_completa %>% 
+     rename(
+         P6020=Sexo)  
+   
+   
+   
+  #//
+   
+   g <-subset(subset(base_completa,as.numeric(base_completa$Nper)<13)) %>%
+     ggplot(aes(x=Nper, fill=Pobre)) +
+     geom_bar( color="#e9ecef", alpha=0.6, position = 'dodge') +
+     scale_fill_manual(values=c("#69b3a2", "#404080")) +
+     labs(fill="")+labs(x="Cantidad de personas por hogar",y="Conteo de hogares",title="Personas por \n hogar discriminado entre pobres y no pobres")+scale_x_continuous(breaks = seq(0, 12,1))
+
+   g
+   ggsave("Views/nper_pobreza.jpg",plot=g)
+   
+# //
+   
+     
+   base_completa$P6100<-factor(base_completa$P6100,levels=c(1,2,3,9),labels=c("Contributivo","Especial","Subsidiado","No_sabe"))
+   
+   h <-subset(subset(base_completa,as.numeric(base_completa$P6100)<4)) %>%
+     ggplot(aes(x=P6100, fill=Pobre)) +
+     geom_bar( color="#e9ecef", alpha=0.6, position = 'dodge') +
+     scale_fill_manual(values=c("#69b3a2", "#404080"))+
+     labs(x="",y="Conteo de hogares",title="Regimen de salud afiliado")
+   
+   h
+   ggsave("Views/salud_pobreza.jpg",plot=h)
+   
+   
+   
+   
+#------------------------------------------------------------------------------
   
 library(tidytable)
 tr_cat<-subset(base_completa,select=c("Depto","P6020","P6050","P6090","P6100",
@@ -1466,7 +1548,7 @@ resultados<-data.frame(Modelo="LM",Base="Predicción",
                        Specificity=cm$byClass[2])
 
 resultados
-
+cm
 
 #------------------------------------------------------------------------------
 
@@ -1582,6 +1664,9 @@ resultados3<-data.frame(Modelo="Logit_entero",Base="Clasificación",
                        Accuracy=cm$overall[1],
                        Sensitivity=cm$byClass[1],
                        Specificity=cm$byClass[2])
+
+
+
 
 resultados3
 
