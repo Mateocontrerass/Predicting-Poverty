@@ -620,12 +620,20 @@ prop.table(table(evaluating$Pobre))
     
     cm_lasso
     
-    resultados_l<-data.frame(Modelo="Lasso",Base="Predicción",
-                           Accuracy=cm_lasso$overall[1],
-                           Sensitivity=cm_lasso$byClass[1],
-                           Specificity=cm_lasso$byClass[2])
+    Accuracy_l<-cm_lasso$overall[1]
+    Sensitivity_l<-cm_lasso$byClass[1]
+    Specificity_l<-cm_lasso$byClass[2]
+    
+    resultados_l<-data.frame(Modelo="Lasso",
+                             "Base"="Predicción",
+                             "Accuracy"= Accuracy_l,
+                             "Sensitivity"=Sensitivity_l,
+                             "Specificity"=Specificity_l)
     
     resultados_l
+    
+
+    
   
   #Ridge 
   modelo_ridge <- glmnet(
@@ -702,12 +710,19 @@ prop.table(table(evaluating$Pobre))
   
   cm_ridge<-confusionMatrix(pobre_hat_r, Pobre_1)
   
+  Accuracy_r<-cm_ridge$overall[1]
+  Sensitivity_r<-cm_ridge$byClass[1]
+  Specificity_r<-cm_ridge$byClass[2]
   
-  resultados_r<-data.frame(Modelo="ridge",Base="Predicción",
-                         Accuracy=cm_ridge$overall[1],
-                         Sensitivity=cm_ridge$byClass[1],
-                         Specificity=cm_ridge$byClass[2])
+  
+  resultados_r<-data.frame(Modelo="Ridge",
+                          "Base"="Predicción",
+                          "Accuracy"=Accuracy_r,
+                          "Sensitivity"=Sensitivity_r,
+                          "Specificity"=Specificity_r)
   resultados_r
+  
+  
   
   ##Elastic net 
  
@@ -776,11 +791,16 @@ prop.table(table(evaluating$Pobre))
   
   cm_elastic<-confusionMatrix(pobre_hat_elastic,Pobre_1)
   
+  Accuracy_en<-cm_elastic$overall[1]
+  Sensitivity_en<-cm_elastic$byClass[1]
+  Specificity_en<-cm_elastic$byClass[2]
   
-  resultados_e<-data.frame(Modelo="elastic net",Base="Predicción",
-                         Accuracy=cm_elastic$overall[1],
-                         Sensitivity=cm_elastic$byClass[1],
-                         Specificity=cm_elastic$byClass[2])
+  
+  resultados_e<-data.frame(Modelo="Elastic Net",
+                          "Base"="Predicción",
+                          "Accuracy"=Accuracy_en,
+                          "Sensitivity"=Sensitivity_en,
+                          "Specificity"=Specificity_en)
   resultados_e
   
   
@@ -820,10 +840,10 @@ prop.table(table(evaluating$Pobre))
  cm_xg<-confusionMatrix(pobre_hat_xg,Pobre_1)
  
  
- resultados_xg<-data.frame(Modelo="XGboost",Base="Predicción",
-                          Accuracy=cm_xg$overall[1],
-                          Sensitivity=cm_xg$byClass[1],
-                          Specificity=cm_xg$byClass[2])
+ resultados_xg<-data.frame(Modelo="XGboost","Base"="Predicción",
+                          "Accuracy"=cm_xg$overall[1],
+                          "Sensitivity"=cm_xg$byClass[1],
+                          "Specificity"=cm_xg$byClass[2])
  resultados_xg
  
  resultados_regularizacion_xg<-rbind(resultados_r,resultados_l, resultados_e, resultados_xg)
@@ -853,15 +873,12 @@ y_out_lm<-predict(reg_lin,evaluating)
 
 #-------------------------------------------------------------------------------
 
-load("data/data_imputada2")
+load("data/entrenamiento")
 load("data/evaluating")
 
 set.seed(666)
 
 ### train
-
-training <- data_rf_train
-rm(data_rf_train)
 
 skim(training)
 
@@ -937,17 +954,15 @@ f1_training_r1 <- F1_Score(y_pred = Pobre_1_hat1_training, y_true = training$Pob
 spf_training_r1 <- Specificity(y_pred = Pobre_1_hat1_training, y_true = training$Pobre_1, positive = 1)
 FPR_training_r1 <- cm_logit_training_r1[2,1]/sum(cm_logit_training_r1[2,])
 FNR_training_r1 <- cm_logit_training_r1[1,2]/sum(cm_logit_training_r1[1,])
+sensi_training_r1 <- cm_logit_training_r1[2,2]/sum(cm_logit_training_r1[,2])
 
 metricas_training_r1 <- data.frame(Modelo = "Logit - Regla de Bayes",
-                                   "Muestreo" = NA, 
-                                   "Evaluación" = "Dentro de muestra",
                                    "Accuracy" = acc_training_r1,
-                                   "Precision" = pre_training_r1,
-                                   "Recall" = rec_training_r1,
-                                   "F1" = f1_training_r1,
+                                   "Sensitivity" = sensi_training_r1,
                                    "Specificity" = spf_training_r1,
-                                   "FPR" = FPR_training_r1,
-                                   "FNR" = FNR_training_r1)
+                                   "Base" = "Clasificación")
+
+metricas_training_r1
 
 #Regla 2
 regla2 <- 0.35 # Se define regla de predicción 
@@ -985,18 +1000,15 @@ f1_training_r2 <- F1_Score(y_pred = Pobre_1_hat2_training, y_true = training$Pob
 spf_training_r2 <- Specificity(y_pred = Pobre_1_hat2_training, y_true = training$Pobre_1, positive = 1)
 FPR_training_r2 <- cm_logit_training_r2[2,1]/sum(cm_logit_training_r2[2,])
 FNR_training_r2 <- cm_logit_training_r2[1,2]/sum(cm_logit_training_r2[1,])
+sensi_training_r2 <- cm_logit_training_r2[2,2]/sum(cm_logit_training_r2[,2])
 
-metricas_training_r2 <- data.frame(Modelo = "Logit - Gráfica",
-                                   "Muestreo" = NA, 
-                                   "Evaluación" = "Dentro de muestra",
+metricas_training_r2 <- data.frame(Modelo = "Logit - Regla de Bayes",
                                    "Accuracy" = acc_training_r2,
-                                   "Precision" = pre_training_r2,
-                                   "Recall" = rec_training_r2,
-                                   "F1" = f1_training_r2,
+                                   "Sensitivity" = sensi_training_r2,
                                    "Specificity" = spf_training_r2,
-                                   "FPR" = FPR_training_r2,
-                                   "FNR" = FNR_training_r2)
+                                   "Base" = "Clasificación")
 
+metricas_training_r2
 
 ## Curva de ROC
 
@@ -1090,17 +1102,16 @@ f1_evaluating_r1 <- F1_Score(y_pred = Pobre_1_hat1_evaluating, y_true = evaluati
 spf_evaluating_r1 <- Specificity(y_pred = Pobre_1_hat1_evaluating, y_true = evaluating$Pobre_1, positive = 1)
 FPR_evaluating_r1 <- cm_logit_evaluating_r1[2,1]/sum(cm_logit_evaluating_r1[2,])
 FNR_evaluating_r1 <- cm_logit_evaluating_r1[1,2]/sum(cm_logit_evaluating_r1[1,])
+sensi_evaluating_r1 <- cm_logit_evaluating_r1[2,2]/sum(cm_logit_evaluating_r1[,2])
 
 metricas_evaluating_r1 <- data.frame(Modelo = "Logit - Regla de Bayes",
-                                     "Muestreo" = NA, 
-                                     "Evaluación" = "Fuera de muestra",
-                                     "Accuracy" = acc_evaluating_r1,
-                                     "Precision" = pre_evaluating_r1,
-                                     "Recall" = rec_evaluating_r1,
-                                     "F1" = f1_evaluating_r1,
-                                     "Specificity" = spf_evaluating_r1,
-                                     "FPR" = FPR_evaluating_r1,
-                                     "FNR" = FNR_evaluating_r1)
+                                   "Accuracy" = acc_evaluating_r1,
+                                   "Sensitivity" = sensi_evaluating_r1,
+                                   "Specificity" = spf_evaluating_r1,
+                                   "Base" = "Clasificación")
+
+metricas_evaluating_r1
+
 
 #Regla 2
 regla2 <- 0.35 # Se define regla de predicción 
@@ -1138,17 +1149,15 @@ f1_evaluating_r2 <- F1_Score(y_pred = Pobre_1_hat2_evaluating, y_true = evaluati
 spf_evaluating_r2 <- Specificity(y_pred = Pobre_1_hat2_evaluating, y_true = evaluating$Pobre_1, positive = 1)
 FPR_evaluating_r2 <- cm_logit_evaluating_r2[2,1]/sum(cm_logit_evaluating_r2[2,])
 FNR_evaluating_r2 <- cm_logit_evaluating_r2[1,2]/sum(cm_logit_evaluating_r2[1,])
+sensi_evaluating_r2 <- cm_logit_evaluating_r2[2,2]/sum(cm_logit_evaluating_r2[,2])
 
 metricas_evaluating_r2 <- data.frame(Modelo = "Logit - Gráfica",
-                                     "Muestreo" = NA, 
-                                     "Evaluación" = "Fuera de muestra",
                                      "Accuracy" = acc_evaluating_r2,
-                                     "Precision" = pre_evaluating_r2,
-                                     "Recall" = rec_evaluating_r2,
-                                     "F1" = f1_evaluating_r2,
+                                     "Sensitivity" = sensi_evaluating_r2,
                                      "Specificity" = spf_evaluating_r2,
-                                     "FPR" = FPR_evaluating_r2,
-                                     "FNR" = FNR_evaluating_r2)
+                                     "Base" = "Clasificación")
+
+metricas_evaluating_r2
 
 
 #-------------------------------------------------------------------------------
@@ -1226,17 +1235,15 @@ f1_oversampling <- F1_Score(y_pred = Pobre_1_hat_oversampling, y_true = train_ov
 spf_oversampling <- Specificity(y_pred = Pobre_1_hat_oversampling, y_true = train_oversampling$Pobre_1, positive = 1)
 FPR_oversampling <- cm_logit_oversampling[2,1]/sum(cm_logit_oversampling[2,])
 FNR_oversampling <- cm_logit_oversampling[1,2]/sum(cm_logit_oversampling[1,])
+sensi_oversampling <- cm_logit_oversampling[2,2]/sum(cm_logit_oversampling[,2])
 
-metricas_oversampling <- data.frame(Modelo = "Logit - correccion de imbalance",
-                                    "Muestreo" = "SMOTE", 
-                                    "Evaluación" = "Dentro de muestra",
-                                    "Accuracy" = acc_oversampling,
-                                    "Precision" = pre_oversampling,
-                                    "Recall" = rec_oversampling,
-                                    "F1" = f1_oversampling,
-                                    "Specificity" = spf_oversampling,
-                                    "FPR" = FPR_oversampling,
-                                    "FNR" = FNR_oversampling)
+metricas_oversampling <- data.frame(Modelo = "Logit - SMOTE",
+                                     "Accuracy" = acc_oversampling,
+                                     "Sensitivity" = sensi_oversampling,
+                                     "Specificity" = spf_oversampling,
+                                     "Base" = "Clasificación")
+
+metricas_oversampling
 
 ## Curva de ROC
 
@@ -1277,17 +1284,15 @@ f1_oversampling_evaluate <- F1_Score(y_pred = Pobre_1_hat_oversampling_evaluate,
 spf_oversampling_evaluate <- Specificity(y_pred = Pobre_1_hat_oversampling_evaluate, y_true = evaluating$Pobre_1, positive = 1)
 FPR_oversampling_evaluate <- cm_logit_oversampling_evaluate[2,1]/sum(cm_logit_oversampling_evaluate[2,])
 FNR_oversampling_evaluate <- cm_logit_oversampling_evaluate[1,2]/sum(cm_logit_oversampling_evaluate[1,])
+sensi_oversampling_evaluate <- cm_logit_oversampling_evaluate[2,2]/sum(cm_logit_oversampling_evaluate[,2])
 
-metricas_oversampling_evaluate <- data.frame(Modelo = "Logit - correcion imbalance",
-                                             "Muestreo" = "SMOTE", 
-                                             "Evaluación" = "Fuera de muestra",
-                                             "Accuracy" = acc_oversampling_evaluate,
-                                             "Precision" = pre_oversampling_evaluate,
-                                             "Recall" = rec_oversampling_evaluate,
-                                             "F1" = f1_oversampling_evaluate,
-                                             "Specificity" = spf_oversampling_evaluate,
-                                             "FPR" = FPR_oversampling_evaluate,
-                                             "FNR" = FNR_oversampling_evaluate)
+metricas_oversampling_evaluate <- data.frame(Modelo = "Logit - SMOTE",
+                                     "Accuracy" = acc_oversampling_evaluate,
+                                     "Sensitivity" = sensi_oversampling_evaluate,
+                                     "Specificity" = spf_oversampling_evaluate,
+                                     "Base" = "Clasificación")
+
+metricas_oversampling_evaluate
 
 
 #-------------------------------------------------------------------------------
@@ -1362,18 +1367,16 @@ rec_undersampling <- Recall(y_pred = Pobre_1_hat_undersampling, y_true = train_u
 f1_undersampling <- F1_Score(y_pred = Pobre_1_hat_undersampling, y_true = train_undersampling$Pobre_1, positive = 1)
 spf_undersampling <- Specificity(y_pred = Pobre_1_hat_undersampling, y_true = train_undersampling$Pobre_1, positive = 1)
 FPR_undersampling <- cm_logit_undersampling[2,1]/sum(cm_logit_undersampling[2,])
-FNR_undersampling <- cm_logit_undersampling[1,2]/sum(cm_logit_undersampling[1,])
+sensi_undersampling <- cm_logit_undersampling[2,2]/sum(cm_logit_undersampling[,2])
 
-metricas_undersampling <- data.frame(Modelo = "Logit - correccion de imbalance",
-                                     "Muestreo" = "undersampling", 
-                                     "Evaluación" = "Dentro de muestra",
-                                     "Accuracy" = acc_undersampling,
-                                     "Precision" = pre_undersampling,
-                                     "Recall" = rec_undersampling,
-                                     "F1" = f1_undersampling,
-                                     "Specificity" = spf_undersampling,
-                                     "FPR" = FPR_undersampling,
-                                     "FNR" = FNR_undersampling)
+metricas_undersampling <- data.frame(Modelo = "Logit - Undersamplin",
+                                             "Accuracy" = acc_undersampling,
+                                             "Sensitivity" = sensi_undersampling,
+                                             "Specificity" = spf_undersampling,
+                                             "Base" = "Clasificación")
+
+metricas_undersampling
+
 
 ## Curva de ROC
 
@@ -1414,17 +1417,15 @@ f1_undersampling_evaluate <- F1_Score(y_pred = Pobre_1_hat_undersampling_evaluat
 spf_undersampling_evaluate <- Specificity(y_pred = Pobre_1_hat_undersampling_evaluate, y_true = evaluating$Pobre_1, positive = 1)
 FPR_undersampling_evaluate <- cm_logit_undersampling_evaluate[2,1]/sum(cm_logit_undersampling_evaluate[2,])
 FNR_undersampling_evaluate <- cm_logit_undersampling_evaluate[1,2]/sum(cm_logit_undersampling_evaluate[1,])
+sensi_undersampling_evaluate <- cm_logit_undersampling_evaluate[2,2]/sum(cm_logit_undersampling_evaluate[,2])
 
-metricas_undersampling_evaluate <- data.frame(Modelo = "Logit - correcion imbalance",
-                                              "Muestreo" = "undersampling", 
-                                              "Evaluación" = "Fuera de muestra",
-                                              "Accuracy" = acc_undersampling_evaluate,
-                                              "Precision" = pre_undersampling_evaluate,
-                                              "Recall" = rec_undersampling_evaluate,
-                                              "F1" = f1_undersampling_evaluate,
-                                              "Specificity" = spf_undersampling_evaluate,
-                                              "FPR" = FPR_undersampling_evaluate,
-                                              "FNR" = FNR_undersampling_evaluate)
+metricas_undersampling_evaluate <- data.frame(Modelo = "Logit - Undersampling",
+                                     "Accuracy" = acc_undersampling_evaluate,
+                                     "Sensitivity" = sensi_undersampling_evaluate,
+                                     "Specificity" = spf_undersampling_evaluate,
+                                     "Base" = "Clasificación")
+
+metricas_undersampling_evaluate
 
 
 #-------------------------------------------------------------------------------
@@ -1470,17 +1471,15 @@ f1_threshold_op_training <- F1_Score(y_pred = Pobre_1_hat_threshold_op_training,
 spf_threshold_op_training <- Specificity(y_pred = Pobre_1_hat_threshold_op_training, y_true = training$Pobre_1, positive = 1)
 FPR_threshold_op_training <- cm_logit_threshold_op_training[2,1]/sum(cm_logit_threshold_op_training[2,])
 FNR_threshold_op_training <- cm_logit_threshold_op_training[1,2]/sum(cm_logit_threshold_op_training[1,])
+sensi_threshold_op_training <- cm_logit_threshold_op_training[2,2]/sum(cm_logit_threshold_op_training[,2])
 
-metricas_threshold_op_training <- data.frame(Modelo = "Logit - umbral optimo",
-                                             "Muestreo" = NA, 
-                                             "Evaluación" = "Fuera de muestra",
-                                             "Accuracy" = acc_threshold_op_training,
-                                             "Precision" = pre_threshold_op_training,
-                                             "Recall" = rec_threshold_op_training,
-                                             "F1" = f1_threshold_op_training,
-                                             "Specificity" = spf_threshold_op_training,
-                                             "FPR" = FPR_threshold_op_training,
-                                             "FNR" = FNR_threshold_op_training)
+metricas_threshold_op_training <- data.frame(Modelo = "Logit - Umbral óptimo",
+                                     "Accuracy" = acc_threshold_op_training,
+                                     "Sensitivity" = sensi_threshold_op_training,
+                                     "Specificity" = spf_threshold_op_training,
+                                     "Base" = "Clasificación")
+
+metricas_threshold_op_training
 
 
 
@@ -1500,17 +1499,15 @@ f1_threshold_op_evaluating <- F1_Score(y_pred = Pobre_1_hat_threshold_op_evaluat
 spf_threshold_op_evaluating <- Specificity(y_pred = Pobre_1_hat_threshold_op_evaluating, y_true = evaluating$Pobre_1, positive = 1)
 FPR_threshold_op_evaluating <- cm_logit_threshold_op_evaluating[2,1]/sum(cm_logit_threshold_op_evaluating[2,])
 FNR_threshold_op_evaluating <- cm_logit_threshold_op_evaluating[1,2]/sum(cm_logit_threshold_op_evaluating[1,])
+sensi_threshold_op_evaluating <- cm_logit_threshold_op_evaluating[2,2]/sum(cm_logit_threshold_op_evaluating[,2])
 
-metricas_threshold_op_evaluating <- data.frame(Modelo = "Logit - umbral optimo",
-                                               "Muestreo" = NA, 
-                                               "Evaluación" = "Fuera de muestra",
-                                               "Accuracy" = acc_threshold_op_evaluating,
-                                               "Precision" = pre_threshold_op_evaluating,
-                                               "Recall" = rec_threshold_op_evaluating,
-                                               "F1" = f1_threshold_op_evaluating,
-                                               "Specificity" = spf_threshold_op_evaluating,
-                                               "FPR" = FPR_threshold_op_evaluating,
-                                               "FNR" = FNR_threshold_op_evaluating)
+metricas_threshold_op_evaluating <- data.frame(Modelo = "Logit - Umbral óptimo",
+                                     "Accuracy" = acc_threshold_op_evaluating,
+                                     "Sensitivity" = sensi_threshold_op_evaluating,
+                                     "Specificity" = spf_threshold_op_evaluating,
+                                     "Base" = "Clasificación")
+
+metricas_threshold_op_evaluating
 
 
 #-------------------------------------------------------------------------------
@@ -1539,21 +1536,7 @@ metricas1 %>%
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 #LM para ingreso
@@ -1621,13 +1604,7 @@ resultados_arbol<-data.frame(Modelo="Arbol",Base="Clasificación",
 
 resultados_arbol
 
-
-
-
-
-
-
-#------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
   # XGBoost para Clasificación
 
@@ -1702,7 +1679,7 @@ Pobre_1<-factor(Pobre_1)
 cm<-confusionMatrix(pobre_logit_hat_todo, Pobre_1)
 
 
-resultados_log<-data.frame(Modelo="Logit_entero",Base="Clasificación",
+resultados_log<-data.frame(Modelo="Logit Entero",Base="Clasificación",
                        Accuracy=cm$overall[1],
                        Sensitivity=cm$byClass[1],
                        Specificity=cm$byClass[2])
