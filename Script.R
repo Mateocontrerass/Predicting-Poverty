@@ -1707,13 +1707,18 @@ load("data/entrenamiento")
 colnames(test)
 colnames(training)
 
+
+hola <- predict(modelo_ridge,train)
+
 test_1 <- subset(test, select = -c(id,Lp,Li))
 
-test <- as.matrix(test_1)
+test_1 <- as.matrix(test_1)
 
 prod(dim(newxt))
 
-ingreso_persona<-predict(modelo_ridge,test_1)
+ingreso_persona<-predict.glmnet(modelo_ridge, test_1, s= mejor_lambda_ridge)
+
+regla <- test
 
 pobre_hat <- ifelse(ingreso_persona<test$Lp,1,0)
 
@@ -1723,18 +1728,10 @@ pobre_persona <- predict(logit_training, test)
 
 regla <- mejor_t
 
-pobre_hat_clasif <- ifelse(Pobre_1_logit_training<regla,1,0)
+pobre_hat_clasif <- ifelse(pobre_persona<regla,1,0)
 
 
-ggplot(data=training , mapping=aes(pobre_hat_clasif,pobre_persona)) + 
-  geom_boxplot(aes(fill=as.factor(Pobre_1))) + theme_test()
+base <- data.frame("id" = test$id, "Pobre" = pobre_hat_clasif)
 
 
-modelo_ridge <- glmnet(
-  x ,
-  y ,
-  alpha = 0,
-  nlambda = mejor_lambda_ridge ,
-  standardize = T
-)
 
