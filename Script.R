@@ -507,7 +507,6 @@ prop.table(table(evaluating$Pobre))
   
   #Base train imputada  
   load("data/entrenamiento")
-  training<-data_rf_train
   data_rf_train<-training # Algunos modelos corren con esta base asi que igual la dejo
   
   
@@ -547,7 +546,7 @@ prop.table(table(evaluating$Pobre))
     y <- training$ing
     
     modelo_lasso <-glmnet(
-      x = newxt,
+      x,
       y,
       alpha = 1,
       nlambda = ,
@@ -1682,7 +1681,7 @@ resultados_xgt
   #Logit con todas las variables
 
 train_clas<-subset(training,select=c(-id,-Li,-Lp,-ing))
-eval_<-subset(evaluating,select=c(-id,-Li,-Lp))
+eval_<-subset(evaluating,select=c(-id,-Li,-Lp, -ing))
 
 
 
@@ -1690,13 +1689,15 @@ train_clas$Pobre_1<-as.factor(train_clas$Pobre_1)
 
 log_todo<-glm(Pobre_1~. , family=binomial(link="logit") , data=train_clas)
 
-evaluating$pobre_logit_hat_todo<-predict(log_todo,eval_)
+pobre_logit_hat_todo<-predict(log_todo,eval_)
+
+pobre_logit_hat_todo <- ifelse(pobre_logit_hat_todo>0.5,1,0)
 
 
-evaluating$pobre_logit_hat_todo<-factor(evaluating$pobre_logit_hat_todo)
-evaluating$Pobre_1<-factor(evaluating$Pobre_1)
+pobre_logit_hat_todo<-factor(pobre_logit_hat_todo)
+Pobre_1<-factor(Pobre_1)
 
-cm<-confusionMatrix(evaluating$pobre_logit_hat_todo,evaluating$Pobre_1)
+cm<-confusionMatrix(pobre_logit_hat_todo, Pobre_1)
 
 
 resultados_log<-data.frame(Modelo="Logit_entero",Base="Clasificación",
