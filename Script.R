@@ -1431,8 +1431,6 @@ metricas_undersampling_evaluate <- data.frame(Modelo = "Logit - correcion imbala
 
 ## Remuestreo - Umbral de decisión optimo
 
-# Esto no se debería hacer sobre la base de testeo pero se hace solo a modo ilustrativo
-
 thresholds <- seq(0.1, 0.9, length.out = 100)
 opt_t <- data.frame()
 for (t in thresholds) {
