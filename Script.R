@@ -1700,20 +1700,22 @@ metricas1 %>%
 
 # Predicciones _ Ridge (Ingreso)
 
+load("data\\test")
+load("data/entrenamiento")
+
 
 colnames(test)
 colnames(training)
 
 test_1 <- subset(test, select = -c(id,Lp,Li))
 
-test <- as.matrix(test)
+test <- as.matrix(test_1)
 
-skim(test$id)
+prod(dim(newxt))
 
+ingreso_persona<-predict(modelo_ridge,test_1)
 
-ingreso_persona<-predict(modelo_ridge,test)
-
-pobre_hat <- ifelse(ingreso_persona>test$Lp,1,0)
+pobre_hat <- ifelse(ingreso_persona<test$Lp,1,0)
 
 ## Predicciones_ Logit (umbral optimo)
 
@@ -1721,10 +1723,18 @@ pobre_persona <- predict(logit_training, test)
 
 regla <- mejor_t
 
-pobre_hat_clasif <- ifelse(Pobre_1_logit_training>regla,1,0)
+pobre_hat_clasif <- ifelse(Pobre_1_logit_training<regla,1,0)
 
 
+ggplot(data=training , mapping=aes(pobre_hat_clasif,pobre_persona)) + 
+  geom_boxplot(aes(fill=as.factor(Pobre_1))) + theme_test()
 
 
-
+modelo_ridge <- glmnet(
+  x ,
+  y ,
+  alpha = 0,
+  nlambda = mejor_lambda_ridge ,
+  standardize = T
+)
 
