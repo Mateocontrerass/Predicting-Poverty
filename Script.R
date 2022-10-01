@@ -547,7 +547,7 @@ prop.table(table(evaluating$Pobre))
     y <- training$ing
     
     modelo_lasso <-glmnet(
-      x = newxt,
+      x,
       y,
       alpha = 1,
       nlambda = ,
