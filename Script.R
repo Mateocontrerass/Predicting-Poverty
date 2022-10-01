@@ -1733,5 +1733,10 @@ pobre_hat_clasif <- ifelse(pobre_persona<regla,1,0)
 
 base <- data.frame("id" = test$id, "Pobre" = pobre_hat_clasif)
 
+install.packages("doBy")
+library(doBy)
+base_h <- summaryBy(Pobre ~ id, data = base)
+Pobre_h <-ifelse(base_h$Pobre.mean>0.5,1,0)
+base_h<- data.frame("Pobre_h" = Pobre_h)
 
-
+write.csv(base_h, "Predicciones de Pobreza")
