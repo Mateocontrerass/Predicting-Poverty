@@ -788,6 +788,47 @@ prop.table(table(evaluating$Pobre))
   resultados_regularizacion<-rbind(resultados_r,resultados_l, resultados_e)
   resultados_regularizacion
   
+  ##XGBoost 
+  #install.packages("xgboost")
+  
+  library(xgboost)
+  newxgt <- x %>% 
+    as.matrix() %>% 
+    xgb.DMatrix(data = .,label = y)
+  
+  newxg <- newx%>% 
+    xgb.DMatrix(data = ., label = evaluating$ing)
+  
+ params <- list(booster = "gbtree", objective = "reg:squarederror", eta=0.3, gamma=0, max_depth=6, subsample=1,colsample_bytree=1)
+ set.seed(666)
+  modelo_xgb <- xgb.cv(data = newxgt, params = params,
+                        nrounds = 500, nfold = 5, showsd = T, stratified = T, print_every_n = 10, early_stop_round = 20, maximize = F) 
+  
+  
+  model_xgb <- xgboost(data = newxgt,
+                   nrounds = 500 ,       # this is where the xgb.cv() results matter
+                   params = params,
+                   stratified = T, print_every_n = 10, early_stop_round = 20, maximize = F)
+  
+  modelo_xgb
+ pred_xgb <-predict (model_xgb, newxg)
+ pobre_hat_xg<-ifelse(pred_xgb<evaluating$Lp,1,0)
+ plot(pobre_hat_xg)
+ 
+ pobre_hat_xg<-factor(pobre_hat_xg)
+ Pobre_1<-factor(Pobre_1)
+ 
+ cm_xg<-confusionMatrix(pobre_hat_xg,Pobre_1)
+ 
+ 
+ resultados_xg<-data.frame(Modelo="XGboost",Base="Predicción",
+                          Accuracy=cm_xg$overall[1],
+                          Sensitivity=cm_xg$byClass[1],
+                          Specificity=cm_xg$byClass[2])
+ resultados_xg
+ 
+ resultados_regularizacion_xg<-rbind(resultados_r,resultados_l, resultados_e, resultados_xg)
+ resultados_regularizacion_xg
 #------------------------------------------------------------------------------
 
   #LM para ingreso
